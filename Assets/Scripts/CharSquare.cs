@@ -8,6 +8,11 @@ public class CharSquare : MonoBehaviour {
     public int playerId = 0;
     public float playerSpeed = 300.0f;
     public float bulletSpeed = 1000.0f;
+    public int maxBullets = 3;
+    [HideInInspector] public List<Bullet> bulletsUp = new List<Bullet>();
+    [HideInInspector] public List<Bullet> bulletsDown = new List<Bullet>();
+    [HideInInspector] public List<Bullet> bulletsLeft = new List<Bullet>();
+    [HideInInspector] public List<Bullet> bulletsRight = new List<Bullet>();
 
     private Color[] colors = { Color.white, Color.blue, Color.magenta, Color.red, Color.green };
     private bool shoot = false;
@@ -181,10 +186,35 @@ public class CharSquare : MonoBehaviour {
 
     void Shoot()
     {
-        spawnBullet(new Vector2(-0.1f, 0.0f), new Vector2(-1.0f, 0.0f));
-        spawnBullet(new Vector2(0.1f, 0.0f), new Vector2(1.0f, 0.0f));
-        spawnBullet(new Vector2(0.0f, 0.1f), new Vector2(0.0f, 1.0f));
-        spawnBullet(new Vector2(0.0f, -0.1f), new Vector2(0.0f, -1.0f));
+        if (bulletsLeft.Count < 3)
+        {
+            Bullet newBullet = spawnBullet(new Vector2(-0.1f, 0.0f), new Vector2(-1.0f, 0.0f));
+            newBullet.bulletDirection = 3;
+            newBullet.bulletListPosition = bulletsLeft.Count;
+            bulletsLeft.Add(newBullet);
+        }
+        if(bulletsRight.Count < 3)
+        {
+            Bullet newBullet = spawnBullet(new Vector2(0.1f, 0.0f), new Vector2(1.0f, 0.0f));
+            newBullet.bulletDirection = 4;
+            newBullet.bulletListPosition = bulletsRight.Count;
+            bulletsRight.Add(newBullet);
+        }
+        if(bulletsUp.Count < 3)
+        {
+            Bullet newBullet = spawnBullet(new Vector2(0.0f, 0.1f), new Vector2(0.0f, 1.0f));
+            newBullet.bulletDirection = 1;
+            newBullet.bulletListPosition = bulletsUp.Count;
+            bulletsUp.Add(newBullet);
+        }
+        if(bulletsDown.Count < 3)
+        {
+            Bullet newBullet = spawnBullet(new Vector2(0.0f, -0.1f), new Vector2(0.0f, -1.0f));
+            newBullet.bulletDirection = 2;
+            newBullet.bulletListPosition = bulletsDown.Count;
+            bulletsDown.Add(newBullet);
+        }
+        
         shoot = false;
     }
 

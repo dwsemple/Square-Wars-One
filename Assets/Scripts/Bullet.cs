@@ -9,6 +9,8 @@ public class Bullet : MonoBehaviour {
     [HideInInspector]
     public CharSquare player;
     public int playerId = 0;
+    public int bulletDirection = 0;
+    public int bulletListPosition = 0;
     private Color[] colors = { Color.white, Color.blue, Color.magenta, Color.red, Color.green };
 
 
@@ -29,5 +31,26 @@ public class Bullet : MonoBehaviour {
     void Update()
     {
 
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.gameObject.CompareTag("GameBoundary"))
+        {
+            if (bulletDirection == 1)
+            {
+                player.bulletsUp.RemoveAt(bulletListPosition);
+            } else if(bulletDirection == 2)
+            {
+                player.bulletsDown.RemoveAt(bulletListPosition);
+            } else if(bulletDirection == 3)
+            {
+                player.bulletsLeft.RemoveAt(bulletListPosition);
+            } else if(bulletDirection == 4)
+            {
+                player.bulletsRight.RemoveAt(bulletListPosition);
+            }
+            Destroy(gameObject);
+        }
     }
 }
