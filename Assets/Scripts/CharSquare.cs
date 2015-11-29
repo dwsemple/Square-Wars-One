@@ -1,6 +1,6 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class CharSquare : MonoBehaviour {
 
@@ -11,23 +11,65 @@ public class CharSquare : MonoBehaviour {
 
     private Color[] colors = { Color.white, Color.blue, Color.magenta, Color.red, Color.green };
     private bool shoot = false;
-    private int moveUp = 0;
-    private int moveDown = 1;
-    private int moveLeft = 2;
-    private int moveRight = 3;
-    private int noMove = 4;
-    private List<int> movementQueue = new List<int>();
+    private List<MoveDirection> movementQueue = new List<MoveDirection>();
+    private IDictionary<MoveDirection, MoveAxisData> movementAxisData = new Dictionary<MoveDirection, MoveAxisData>() {
+        { MoveDirection.NO_MOVE, new MoveAxisData(null, MoveAxis.NO_MOVE, null)  },
+        { MoveDirection.LEFT, new MoveAxisData("Left", MoveAxis.HORIZONTAL, "Left") },
+        { MoveDirection.RIGHT, new MoveAxisData("Right", MoveAxis.HORIZONTAL, "Right") },
+        { MoveDirection.UP, new MoveAxisData("Up", MoveAxis.VERTICAL, "Up") },
+        { MoveDirection.DOWN, new MoveAxisData("Down", MoveAxis.VERTICAL, "Down") }
+    };
 
     private Rigidbody2D rb2d;
+
+    private enum MoveDirection {
+        NO_MOVE,
+        LEFT,
+        RIGHT,
+        UP,
+        DOWN
+    }
+
+    private enum MoveAxis {
+        NO_MOVE,
+        HORIZONTAL,
+        VERTICAL
+    }
+
+    private class MoveAxisData {
+        private String axisName;
+        private MoveAxis axisAffected;
+        private String buttonName;
+
+        public MoveAxisData(String axisName, MoveAxis axisAffected, String buttonName) {
+            this.axisName = axisName;
+            this.axisAffected = axisAffected;
+            this.buttonName = buttonName;
+        }
+
+        public String AxisName {
+            get { return axisName; }
+            set { axisName = value; }
+        }
+
+        public MoveAxis AxisAffected {
+            get { return axisAffected; }
+            set { axisAffected = value; }
+        }
+
+        public String ButtonName {
+            get { return buttonName; }
+            set { buttonName = value; }
+        }
+    }
 
     // Use this for initialization
     void Start () {
         GetComponent<SpriteRenderer>().color = colors[playerId];
-        movementQueue.Add(noMove);
-        movementQueue.Add(moveLeft);
-        movementQueue.Add(moveRight);
-        movementQueue.Add(moveUp);
-        movementQueue.Add(moveDown);
+
+        foreach(MoveDirection direction in Enum.GetValues(typeof(MoveDirection))) {
+            movementQueue.Add(direction);
+        }
     }
 
     void Awake() {
@@ -36,119 +78,18 @@ public class CharSquare : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        int count = 0;
 
-        if (Input.GetButtonDown("Up")) {
-            foreach(int i in movementQueue)
-            {
-                if(i == moveUp)
-                {
-                    movementQueue.RemoveAt(count);
-                    break;
+        foreach (MoveDirection moveDirection in movementAxisData.Keys) {
+            MoveAxisData axis;
+            movementAxisData.TryGetValue(moveDirection, out axis);
+            if (axis.ButtonName != null) {
+                if (Input.GetButtonDown(axis.ButtonName)) {
+                    moveDirectionToFrontOfQueue(moveDirection);
                 }
-                count++;
-            }
-            movementQueue.Insert(0, moveUp);
-            count = 0;
-        } else if (Input.GetButtonUp("Up")) {
-            foreach (int i in movementQueue)
-            {
-                if (i == moveUp)
-                {
-                    movementQueue.RemoveAt(count);
-                    break;
+                else if (Input.GetButtonUp(axis.ButtonName)) {
+                    moveDirectionToBackOfQueue(moveDirection);
                 }
-                count++;
             }
-            movementQueue.Add(moveUp);
-            count = 0;
-        }
-        
-        if (Input.GetButtonDown("Down"))
-        {
-            foreach (int i in movementQueue)
-            {
-                if (i == moveDown)
-                {
-                    movementQueue.RemoveAt(count);
-                    break;
-                }
-                count++;
-            }
-            movementQueue.Insert(0, moveDown);
-            count = 0;
-        }
-        else if (Input.GetButtonUp("Down"))
-        {
-            foreach (int i in movementQueue)
-            {
-                if (i == moveDown)
-                {
-                    movementQueue.RemoveAt(count);
-                    break;
-                }
-                count++;
-            }
-            movementQueue.Add(moveDown);
-            count = 0;
-        }
-
-        if (Input.GetButtonDown("Left"))
-        {
-            foreach (int i in movementQueue)
-            {
-                if (i == moveLeft)
-                {
-                    movementQueue.RemoveAt(count);
-                    break;
-                }
-                count++;
-            }
-            movementQueue.Insert(0, moveLeft);
-            count = 0;
-        }
-        else if (Input.GetButtonUp("Left"))
-        {
-            foreach (int i in movementQueue)
-            {
-                if (i == moveLeft)
-                {
-                    movementQueue.RemoveAt(count);
-                    break;
-                }
-                count++;
-            }
-            movementQueue.Add(moveLeft);
-            count = 0;
-        }
-
-        if (Input.GetButtonDown("Right"))
-        {
-            foreach (int i in movementQueue)
-            {
-                if (i == moveRight)
-                {
-                    movementQueue.RemoveAt(count);
-                    break;
-                }
-                count++;
-            }
-            movementQueue.Insert(0, moveRight);
-            count = 0;
-        }
-        else if (Input.GetButtonUp("Right"))
-        {
-            foreach (int i in movementQueue)
-            {
-                if (i == moveRight)
-                {
-                    movementQueue.RemoveAt(count);
-                    break;
-                }
-                count++;
-            }
-            movementQueue.Add(moveRight);
-            count = 0;
         }
         
         if (Input.GetButtonDown("Fire"))
@@ -160,14 +101,13 @@ public class CharSquare : MonoBehaviour {
     void FixedUpdate() {
         float h = 0.0f;
         float v = 0.0f;
-        if(movementQueue[0] == 0) {
-            v = Input.GetAxis("Up");
-        } else if(movementQueue[0] == 1) {
-            v = Input.GetAxis("Down");
-        } else if (movementQueue[0] == 2) {
-            h = Input.GetAxis("Left");
-        } else if (movementQueue[0] == 3) {
-            h = Input.GetAxis("Right");
+        
+        MoveAxisData currentAxis;
+        movementAxisData.TryGetValue(movementQueue[0], out currentAxis);
+        if (currentAxis.AxisAffected == MoveAxis.HORIZONTAL) {
+            h = Input.GetAxis(currentAxis.AxisName);
+        } else if (currentAxis.AxisAffected == MoveAxis.VERTICAL) {
+            v = Input.GetAxis(currentAxis.AxisName);
         }
 
         Vector2 direction = new Vector2(h, v);
@@ -196,5 +136,33 @@ public class CharSquare : MonoBehaviour {
         ((Bullet)newBullet.GetComponent<Bullet>()).player = this;
         ((Bullet)newBullet.GetComponent<Bullet>()).playerId = playerId;
         return (Bullet)newBullet.GetComponent<Bullet>();
+    }
+
+    private void moveDirectionToBackOfQueue(MoveDirection direction) {
+        int count = 0;
+        foreach (MoveDirection directionInQueue in movementQueue)
+        {
+            if (directionInQueue == direction)
+            {
+                movementQueue.RemoveAt(count);
+                break;
+            }
+            count++;
+        }
+        movementQueue.Add(direction);
+    }
+
+    private void moveDirectionToFrontOfQueue(MoveDirection direction) {
+        int count = 0;
+        foreach (MoveDirection directionInQueue in movementQueue)
+        {
+            if (directionInQueue == direction)
+            {
+                movementQueue.RemoveAt(count);
+                break;
+            }
+            count++;
+        }
+        movementQueue.Insert(0, direction);
     }
 }
