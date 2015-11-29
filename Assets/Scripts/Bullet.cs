@@ -37,19 +37,7 @@ public class Bullet : MonoBehaviour {
     {
         if (other.gameObject.CompareTag("GameBoundary"))
         {
-            if (bulletDirection == 1)
-            {
-                player.bulletsUp.RemoveAt(bulletListPosition);
-            } else if(bulletDirection == 2)
-            {
-                player.bulletsDown.RemoveAt(bulletListPosition);
-            } else if(bulletDirection == 3)
-            {
-                player.bulletsLeft.RemoveAt(bulletListPosition);
-            } else if(bulletDirection == 4)
-            {
-                player.bulletsRight.RemoveAt(bulletListPosition);
-            }
+            player.removeBullet(bulletDirection, bulletListPosition);
             Destroy(gameObject);
         }
     }

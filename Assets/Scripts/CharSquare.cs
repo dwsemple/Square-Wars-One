@@ -168,6 +168,59 @@ public class CharSquare : MonoBehaviour {
         return (Bullet)newBullet.GetComponent<Bullet>();
     }
 
+    public void removeBullet(int direction, int listPosition)
+    {
+        if(direction == 1)
+        {
+            bulletsUp.RemoveAt(listPosition);
+            int count = 0;
+            foreach(Bullet bullets in bulletsUp)
+            {
+                if(bullets.bulletListPosition != count)
+                {
+                    bullets.bulletListPosition = count;
+                }
+                count++;
+            }
+        } else if(direction == 2)
+        {
+            bulletsDown.RemoveAt(listPosition);
+            int count = 0;
+            foreach (Bullet bullets in bulletsDown)
+            {
+                if (bullets.bulletListPosition != count)
+                {
+                    bullets.bulletListPosition = count;
+                }
+                count++;
+            }
+        } else if (direction == 3)
+        {
+            bulletsLeft.RemoveAt(listPosition);
+            int count = 0;
+            foreach (Bullet bullets in bulletsLeft)
+            {
+                if (bullets.bulletListPosition != count)
+                {
+                    bullets.bulletListPosition = count;
+                }
+                count++;
+            }
+        } else if (direction == 4)
+        {
+            bulletsRight.RemoveAt(listPosition);
+            int count = 0;
+            foreach (Bullet bullets in bulletsRight)
+            {
+                if (bullets.bulletListPosition != count)
+                {
+                    bullets.bulletListPosition = count;
+                }
+                count++;
+            }
+        }
+    }
+
     private void moveDirectionToBackOfQueue(MoveDirection direction) {
         int count = 0;
         foreach (MoveDirection directionInQueue in movementQueue)
