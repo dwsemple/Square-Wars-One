@@ -10,10 +10,6 @@ public class CharSquare : MonoBehaviour {
     public float bulletSpeed = 500.0f;
     public int maxBullets = 3;
     public int health = 1;
-    [HideInInspector] public List<Bullet> bulletsUp = new List<Bullet>();
-    [HideInInspector] public List<Bullet> bulletsDown = new List<Bullet>();
-    [HideInInspector] public List<Bullet> bulletsLeft = new List<Bullet>();
-    [HideInInspector] public List<Bullet> bulletsRight = new List<Bullet>();
 
     private Color[] colors = { Color.white, Color.blue, Color.magenta, Color.red, Color.green };
     private bool shoot = false;
@@ -24,6 +20,18 @@ public class CharSquare : MonoBehaviour {
         { MoveDirection.RIGHT, new MoveAxisData("Right", MoveAxis.HORIZONTAL, "Right") },
         { MoveDirection.UP, new MoveAxisData("Up", MoveAxis.VERTICAL, "Up") },
         { MoveDirection.DOWN, new MoveAxisData("Down", MoveAxis.VERTICAL, "Down") }
+    };
+    private IDictionary<BulletDirection, List<Bullet>> activeBullets = new Dictionary<BulletDirection, List<Bullet>>() {
+        { BulletDirection.LEFT, new List<Bullet>() },
+        { BulletDirection.RIGHT, new List<Bullet>() },
+        { BulletDirection.UP, new List<Bullet>() },
+        { BulletDirection.DOWN, new List<Bullet>() }
+    };
+    private IDictionary<BulletDirection, Vector2> bulletVelocities = new Dictionary<BulletDirection, Vector2>() {
+        { BulletDirection.LEFT, new Vector2(-1.0f,0.0f) },
+        { BulletDirection.RIGHT, new Vector2(1.0f,0.0f) },
+        { BulletDirection.UP, new Vector2(0.0f,1.0f) },
+        { BulletDirection.DOWN, new Vector2(0.0f,-1.0f) }
     };
     private bool alive = true;
 
@@ -41,6 +49,14 @@ public class CharSquare : MonoBehaviour {
         NO_MOVE,
         HORIZONTAL,
         VERTICAL
+    }
+
+    public enum BulletDirection
+    {
+        LEFT,
+        RIGHT,
+        UP,
+        DOWN
     }
 
     private class MoveAxisData {
@@ -236,37 +252,22 @@ public class CharSquare : MonoBehaviour {
         }
     }
 
-    void Shoot()
+    private void Shoot()
     {
-        if (bulletsLeft.Count < 3)
+        foreach(BulletDirection bullets in activeBullets.Keys)
         {
-            Bullet newBullet = spawnBullet(new Vector2(0.0f, 0.0f), new Vector2(-1.0f, 0.0f));
-            newBullet.bulletDirection = 3;
-            newBullet.bulletListPosition = bulletsLeft.Count;
-            bulletsLeft.Add(newBullet);
+            List<Bullet> bulletList;
+            activeBullets.TryGetValue(bullets, out bulletList);
+            if (bulletList.Count < maxBullets)
+            {
+                Vector2 bulletVelocity;
+                bulletVelocities.TryGetValue(bullets, out bulletVelocity);
+                Bullet newBullet = spawnBullet(new Vector2(0.0f, 0.0f), bulletVelocity);
+                newBullet.bulletDirection = bullets;
+                newBullet.bulletListPosition = bulletList.Count;
+                bulletList.Add(newBullet);
+            }
         }
-        if(bulletsRight.Count < 3)
-        {
-            Bullet newBullet = spawnBullet(new Vector2(0.0f, 0.0f), new Vector2(1.0f, 0.0f));
-            newBullet.bulletDirection = 4;
-            newBullet.bulletListPosition = bulletsRight.Count;
-            bulletsRight.Add(newBullet);
-        }
-        if(bulletsUp.Count < 3)
-        {
-            Bullet newBullet = spawnBullet(new Vector2(0.0f, 0.0f), new Vector2(0.0f, 1.0f));
-            newBullet.bulletDirection = 1;
-            newBullet.bulletListPosition = bulletsUp.Count;
-            bulletsUp.Add(newBullet);
-        }
-        if(bulletsDown.Count < 3)
-        {
-            Bullet newBullet = spawnBullet(new Vector2(0.0f, 0.0f), new Vector2(0.0f, -1.0f));
-            newBullet.bulletDirection = 2;
-            newBullet.bulletListPosition = bulletsDown.Count;
-            bulletsDown.Add(newBullet);
-        }
-        
         shoot = false;
     }
 
@@ -280,56 +281,19 @@ public class CharSquare : MonoBehaviour {
         return (Bullet)newBullet.GetComponent<Bullet>();
     }
 
-    public void removeBullet(int direction, int listPosition)
+    public void removeBullet(BulletDirection direction, int listPosition)
     {
-        if(direction == 1)
+        List<Bullet> bulletList;
+        activeBullets.TryGetValue((BulletDirection)direction, out bulletList);
+        bulletList.RemoveAt(listPosition);
+        int count = 0;
+        foreach (Bullet bullets in bulletList)
         {
-            bulletsUp.RemoveAt(listPosition);
-            int count = 0;
-            foreach(Bullet bullets in bulletsUp)
+            if (bullets.bulletListPosition != count)
             {
-                if(bullets.bulletListPosition != count)
-                {
-                    bullets.bulletListPosition = count;
-                }
-                count++;
+                bullets.bulletListPosition = count;
             }
-        } else if(direction == 2)
-        {
-            bulletsDown.RemoveAt(listPosition);
-            int count = 0;
-            foreach (Bullet bullets in bulletsDown)
-            {
-                if (bullets.bulletListPosition != count)
-                {
-                    bullets.bulletListPosition = count;
-                }
-                count++;
-            }
-        } else if (direction == 3)
-        {
-            bulletsLeft.RemoveAt(listPosition);
-            int count = 0;
-            foreach (Bullet bullets in bulletsLeft)
-            {
-                if (bullets.bulletListPosition != count)
-                {
-                    bullets.bulletListPosition = count;
-                }
-                count++;
-            }
-        } else if (direction == 4)
-        {
-            bulletsRight.RemoveAt(listPosition);
-            int count = 0;
-            foreach (Bullet bullets in bulletsRight)
-            {
-                if (bullets.bulletListPosition != count)
-                {
-                    bullets.bulletListPosition = count;
-                }
-                count++;
-            }
+            count++;
         }
     }
 
@@ -363,35 +327,20 @@ public class CharSquare : MonoBehaviour {
 
     public void noHealth()
     {
-        int count = 0;
-        foreach(Bullet bullets in bulletsLeft)
+
+        foreach (BulletDirection bulletLists in activeBullets.Keys)
         {
-            Destroy(bullets.gameObject);
-            bulletsLeft.RemoveAt(count);
-            count++;
+            List<Bullet> bulletList;
+            activeBullets.TryGetValue(bulletLists, out bulletList);
+            int count = 0;
+            foreach (Bullet bullets in bulletList)
+            {
+                bulletList.RemoveAt(count);
+                Destroy(bullets.gameObject);
+                count++;
+            }
+            count = 0;
         }
-        count = 0;
-        foreach (Bullet bullets in bulletsRight)
-        {
-            Destroy(bullets.gameObject);
-            bulletsRight.RemoveAt(count);
-            count++;
-        }
-        count = 0;
-        foreach (Bullet bullets in bulletsUp)
-        {
-            Destroy(bullets.gameObject);
-            bulletsUp.RemoveAt(count);
-            count++;
-        }
-        count = 0;
-        foreach (Bullet bullets in bulletsDown)
-        {
-            Destroy(bullets.gameObject);
-            bulletsDown.RemoveAt(count);
-            count++;
-        }
-        count = 0;
 
         GameObject[] playerSpecialWalls = GameObject.FindGameObjectsWithTag("PlayerSpecialWall");
         foreach(GameObject playerWall in playerSpecialWalls)

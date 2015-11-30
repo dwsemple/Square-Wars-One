@@ -10,10 +10,9 @@ public class Bullet : MonoBehaviour {
     [HideInInspector]
     public CharSquare player;
     public int playerId = 0;
-    public int bulletDirection = 0;
+    public CharSquare.BulletDirection bulletDirection;
     public int bulletListPosition = 0;
     private Color[] colors = { Color.white, Color.blue, Color.magenta, Color.red, Color.green };
-
 
     private Rigidbody2D rb2d;
 
