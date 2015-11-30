@@ -6,6 +6,7 @@ public class Bullet : MonoBehaviour {
     public float directionX = 0.0f;
     public float directionY = 0.0f;
     public float speed = 0.0f;
+    public int damage = 1;
     [HideInInspector]
     public CharSquare player;
     public int playerId = 0;
@@ -35,10 +36,28 @@ public class Bullet : MonoBehaviour {
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.gameObject.CompareTag("GameBoundary"))
+        if (other.gameObject.tag == "GameBoundary" || other.gameObject.tag == "Wall" || other.gameObject.tag == "WinnersSquare")
         {
-            player.removeBullet(bulletDirection, bulletListPosition);
-            Destroy(gameObject);
+            destroySelf();
+        } else if(other.gameObject.tag == "Player")
+        {
+            if (((CharSquare)other.GetComponent<CharSquare>()).playerId != playerId)
+            {
+                ((CharSquare)other.GetComponent<CharSquare>()).health -= damage;
+                destroySelf();
+            }
+        } else if(other.gameObject.tag == "PlayerSpecialWall")
+        {
+            if (((SquarePlayerWall)other.GetComponent<SquarePlayerWall>()).playerId != playerId)
+            {
+                destroySelf();
+            }
         }
+    }
+
+    void destroySelf()
+    {
+        player.removeBullet(bulletDirection, bulletListPosition);
+        Destroy(gameObject);
     }
 }
