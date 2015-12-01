@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CharSquare : MonoBehaviour {
+public class CharSquare : MonoBehaviour
+{
 
     public GameObject bullet;
     public int playerId = 0;
@@ -14,20 +15,23 @@ public class CharSquare : MonoBehaviour {
     private Color[] colors = { Color.white, Color.blue, Color.magenta, Color.red, Color.green };
     private bool shoot = false;
     private List<MoveDirection> movementQueue = new List<MoveDirection>();
-    private IDictionary<MoveDirection, MoveAxisData> movementAxisData = new Dictionary<MoveDirection, MoveAxisData>() {
+    private IDictionary<MoveDirection, MoveAxisData> movementAxisData = new Dictionary<MoveDirection, MoveAxisData>()
+    {
         { MoveDirection.NO_MOVE, new MoveAxisData(null, MoveAxis.NO_MOVE, null)  },
         { MoveDirection.LEFT, new MoveAxisData("Left", MoveAxis.HORIZONTAL, "Left") },
         { MoveDirection.RIGHT, new MoveAxisData("Right", MoveAxis.HORIZONTAL, "Right") },
         { MoveDirection.UP, new MoveAxisData("Up", MoveAxis.VERTICAL, "Up") },
         { MoveDirection.DOWN, new MoveAxisData("Down", MoveAxis.VERTICAL, "Down") }
     };
-    private IDictionary<BulletDirection, List<Bullet>> activeBullets = new Dictionary<BulletDirection, List<Bullet>>() {
+    private IDictionary<BulletDirection, List<Bullet>> activeBullets = new Dictionary<BulletDirection, List<Bullet>>()
+    {
         { BulletDirection.LEFT, new List<Bullet>() },
         { BulletDirection.RIGHT, new List<Bullet>() },
         { BulletDirection.UP, new List<Bullet>() },
         { BulletDirection.DOWN, new List<Bullet>() }
     };
-    private IDictionary<BulletDirection, Vector2> bulletVelocities = new Dictionary<BulletDirection, Vector2>() {
+    private IDictionary<BulletDirection, Vector2> bulletVelocities = new Dictionary<BulletDirection, Vector2>()
+    {
         { BulletDirection.LEFT, new Vector2(-1.0f,0.0f) },
         { BulletDirection.RIGHT, new Vector2(1.0f,0.0f) },
         { BulletDirection.UP, new Vector2(0.0f,1.0f) },
@@ -37,7 +41,8 @@ public class CharSquare : MonoBehaviour {
 
     private Rigidbody2D rb2d;
 
-    private enum MoveDirection {
+    private enum MoveDirection
+    {
         NO_MOVE,
         LEFT,
         RIGHT,
@@ -45,7 +50,8 @@ public class CharSquare : MonoBehaviour {
         DOWN
     }
 
-    private enum MoveAxis {
+    private enum MoveAxis
+    {
         NO_MOVE,
         HORIZONTAL,
         VERTICAL
@@ -59,48 +65,57 @@ public class CharSquare : MonoBehaviour {
         DOWN
     }
 
-    private class MoveAxisData {
+    private class MoveAxisData
+    {
         private String axisName;
         private MoveAxis axisAffected;
         private String buttonName;
 
-        public MoveAxisData(String axisName, MoveAxis axisAffected, String buttonName) {
+        public MoveAxisData(String axisName, MoveAxis axisAffected, String buttonName)
+        {
             this.axisName = axisName;
             this.axisAffected = axisAffected;
             this.buttonName = buttonName;
         }
 
-        public String AxisName {
+        public String AxisName
+        {
             get { return axisName; }
             set { axisName = value; }
         }
 
-        public MoveAxis AxisAffected {
+        public MoveAxis AxisAffected
+        {
             get { return axisAffected; }
             set { axisAffected = value; }
         }
 
-        public String ButtonName {
+        public String ButtonName
+        {
             get { return buttonName; }
             set { buttonName = value; }
         }
     }
 
     // Use this for initialization
-    void Start () {
+    void Start ()
+    {
         GetComponent<SpriteRenderer>().color = colors[playerId];
         if (playerId == 1)
         {
-            movementAxisData = new Dictionary<MoveDirection, MoveAxisData>() {
+            movementAxisData = new Dictionary<MoveDirection, MoveAxisData>()
+            {
                 { MoveDirection.NO_MOVE, new MoveAxisData(null, MoveAxis.NO_MOVE, null)  },
                 { MoveDirection.LEFT, new MoveAxisData("Left", MoveAxis.HORIZONTAL, "Left") },
                 { MoveDirection.RIGHT, new MoveAxisData("Right", MoveAxis.HORIZONTAL, "Right") },
                 { MoveDirection.UP, new MoveAxisData("Up", MoveAxis.VERTICAL, "Up") },
                 { MoveDirection.DOWN, new MoveAxisData("Down", MoveAxis.VERTICAL, "Down") }
             };
-        } else if(playerId == 2)
+        }
+        else if(playerId == 2)
         {
-            movementAxisData = new Dictionary<MoveDirection, MoveAxisData>() {
+            movementAxisData = new Dictionary<MoveDirection, MoveAxisData>()
+            {
                 { MoveDirection.NO_MOVE, new MoveAxisData(null, MoveAxis.NO_MOVE, null)  },
                 { MoveDirection.LEFT, new MoveAxisData("Left2", MoveAxis.HORIZONTAL, "Left2") },
                 { MoveDirection.RIGHT, new MoveAxisData("Right2", MoveAxis.HORIZONTAL, "Right2") },
@@ -108,17 +123,20 @@ public class CharSquare : MonoBehaviour {
                 { MoveDirection.DOWN, new MoveAxisData("Down2", MoveAxis.VERTICAL, "Down2") }
             };
         }
-        foreach(MoveDirection direction in Enum.GetValues(typeof(MoveDirection))) {
+        foreach(MoveDirection direction in Enum.GetValues(typeof(MoveDirection)))
+        {
             movementQueue.Add(direction);
         }
     }
 
-    void Awake() {
+    void Awake()
+    {
         rb2d = GetComponent<Rigidbody2D>();
     }
 	
 	// Update is called once per frame
-	void Update () {
+	void Update ()
+    {
 
         if (health < 1 && alive)
         {
@@ -155,7 +173,8 @@ public class CharSquare : MonoBehaviour {
         }
     }
 
-    void FixedUpdate() {
+    void FixedUpdate()
+    {
         float h = 0.0f;
         float v = 0.0f;
 
@@ -177,35 +196,35 @@ public class CharSquare : MonoBehaviour {
         RaycastHit2D wallCollision = Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), new Vector2(transform.position.x + (direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime), transform.position.y + (direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
         RaycastHit2D wallCollisionUpper = Physics2D.Linecast(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y + (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Wall"));
         RaycastHit2D wallCollisionLower = Physics2D.Linecast(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y - (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Wall"));
-
+        
         RaycastHit2D wallCollisionP1 = Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), new Vector2(transform.position.x + (direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime), transform.position.y + (direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Player1Wall"));
         RaycastHit2D wallCollisionP1Upper = Physics2D.Linecast(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y + (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player1Wall"));
         RaycastHit2D wallCollisionP1Lower = Physics2D.Linecast(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y - (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player1Wall"));
-
+        
         RaycastHit2D wallCollisionP2 = Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), new Vector2(transform.position.x + (direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime), transform.position.y + (direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Player2Wall"));
         RaycastHit2D wallCollisionP2Upper = Physics2D.Linecast(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y + (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player2Wall"));
         RaycastHit2D wallCollisionP2Lower = Physics2D.Linecast(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y - (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player2Wall"));
-
+        
         if (wallCollision || wallCollisionUpper || wallCollisionLower || wallCollisionP1 || wallCollisionP1Upper || wallCollisionP1Lower || wallCollisionP2 || wallCollisionP2Upper || wallCollisionP2Lower)
         {
             RaycastHit2D[] collisionDetected = { wallCollision, wallCollisionUpper, wallCollisionLower };
             bool[] isWallCollision = { false, false, false };
             Vector2[] wallCollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
-
+            
             RaycastHit2D[] collisionDetectedP1 = { wallCollisionP1, wallCollisionP1Upper, wallCollisionP1Lower };
             bool[] isWallP1Collision = { false, false, false };
             Vector2[] wallP1CollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
-
+            
             RaycastHit2D[] collisionDetectedP2 = { wallCollisionP2, wallCollisionP2Upper, wallCollisionP2Lower };
             bool[] isWallP2Collision = { false, false, false };
             Vector2[] wallP2CollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
-
+            
             int count = 0;
             foreach(RaycastHit2D collision in collisionDetected)
             {
                 if(collision)
                 {
-                    if (collision.rigidbody.tag == "Wall")
+                    if (collision.rigidbody.CompareTag("Wall"))
                     {
                         rb2d.velocity = new Vector2(0.0f, 0.0f);
                         Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
@@ -215,7 +234,7 @@ public class CharSquare : MonoBehaviour {
                         wallCollisionDistance[count] = boundaryOffset - squareOffset;
                         isWallCollision[count] = true;
                     }
-                    else if (collision.rigidbody.tag == "GameBoundary")
+                    else if (collision.rigidbody.CompareTag("GameBoundary"))
                     {
                         rb2d.velocity = new Vector2(0.0f, 0.0f);
                         Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
@@ -228,13 +247,13 @@ public class CharSquare : MonoBehaviour {
                 }
                 count++;
             }
-
+            
             int countP1 = 0;
             foreach (RaycastHit2D collision in collisionDetectedP1)
             {
                 if (collision)
                 {
-                    if (collision.rigidbody.tag == "PlayerSpecialWall")
+                    if (collision.rigidbody.CompareTag("PlayerSpecialWall"))
                     {
                         if (((SquarePlayerWall)collision.rigidbody.GetComponent<SquarePlayerWall>()).playerId != playerId)
                         {
@@ -250,13 +269,13 @@ public class CharSquare : MonoBehaviour {
                 }
                 countP1++;
             }
-
+            
             int countP2 = 0;
             foreach (RaycastHit2D collision in collisionDetectedP2)
             {
                 if (collision)
                 {
-                    if (collision.rigidbody.tag == "PlayerSpecialWall")
+                    if (collision.rigidbody.CompareTag("PlayerSpecialWall"))
                     {
                         if (((SquarePlayerWall)collision.rigidbody.GetComponent<SquarePlayerWall>()).playerId != playerId)
                         {
@@ -272,7 +291,7 @@ public class CharSquare : MonoBehaviour {
                 }
                 countP2++;
             }
-
+            
             int countTest = 0;
             foreach(bool collisionTest in isWallCollision)
             {
@@ -288,7 +307,7 @@ public class CharSquare : MonoBehaviour {
                     isWallCollision[countTest] = true;
                     wallCollisionDistance[countTest] = wallP1CollisionDistance[countTest];
                 }
-
+                
                 if (isWallP2Collision[countTest] && isWallCollision[countTest])
                 {
                     if (Mathf.Abs(wallP2CollisionDistance[countTest].x + wallP2CollisionDistance[countTest].y) < Mathf.Abs(wallCollisionDistance[countTest].x + wallCollisionDistance[countTest].y))
@@ -322,7 +341,7 @@ public class CharSquare : MonoBehaviour {
                 {
                     if(collision)
                     {
-                        if (collision.rigidbody.tag == "WinnersSquare")
+                        if (collision.rigidbody.CompareTag("WinnersSquare"))
                         {
                             Application.LoadLevel(Application.loadedLevel);
                             ignoreCollision = false;
@@ -367,7 +386,8 @@ public class CharSquare : MonoBehaviour {
             rb2d.velocity = velocity;
         }
 
-        if(shoot) {
+        if(shoot)
+        {
             Shoot();
         }
     }
@@ -404,20 +424,21 @@ public class CharSquare : MonoBehaviour {
     public void removeBullet(BulletDirection direction, int listPosition)
     {
         List<Bullet> bulletList;
-        activeBullets.TryGetValue((BulletDirection)direction, out bulletList);
+        activeBullets.TryGetValue(direction, out bulletList);
         bulletList.RemoveAt(listPosition);
         int count = 0;
-        foreach (Bullet bullets in bulletList)
+        foreach (Bullet bullet in bulletList)
         {
-            if (bullets.bulletListPosition != count)
+            if (bullet.bulletListPosition != count)
             {
-                bullets.bulletListPosition = count;
+                bullet.bulletListPosition = count;
             }
             count++;
         }
     }
 
-    private void moveDirectionToBackOfQueue(MoveDirection direction) {
+    private void moveDirectionToBackOfQueue(MoveDirection direction)
+    {
         int count = 0;
         foreach (MoveDirection directionInQueue in movementQueue)
         {
@@ -431,7 +452,8 @@ public class CharSquare : MonoBehaviour {
         movementQueue.Add(direction);
     }
 
-    private void moveDirectionToFrontOfQueue(MoveDirection direction) {
+    private void moveDirectionToFrontOfQueue(MoveDirection direction)
+    {
         int count = 0;
         foreach (MoveDirection directionInQueue in movementQueue)
         {
@@ -452,14 +474,13 @@ public class CharSquare : MonoBehaviour {
         {
             List<Bullet> bulletList;
             activeBullets.TryGetValue(bulletLists, out bulletList);
-            int count = 0;
-            foreach (Bullet bullets in bulletList)
+            int count = bulletList.Count - 1;
+            while (bulletList.Count > 0)
             {
+                Destroy(bulletList[count].gameObject);
                 bulletList.RemoveAt(count);
-                Destroy(bullets.gameObject);
-                count++;
+                count--;
             }
-            count = 0;
         }
 
         GameObject[] playerSpecialWalls = GameObject.FindGameObjectsWithTag("PlayerSpecialWall");

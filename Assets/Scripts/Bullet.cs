@@ -1,7 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Bullet : MonoBehaviour {
+public class Bullet : MonoBehaviour
+{
 
     public float directionX = 0.0f;
     public float directionY = 0.0f;
@@ -27,25 +28,21 @@ public class Bullet : MonoBehaviour {
         GetComponent<SpriteRenderer>().color = colors[playerId];
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.gameObject.tag == "GameBoundary" || other.gameObject.tag == "Wall" || other.gameObject.tag == "WinnersSquare")
+        if (other.gameObject.CompareTag("GameBoundary") || other.gameObject.CompareTag("Wall") || other.gameObject.CompareTag("WinnersSquare"))
         {
             destroySelf();
-        } else if(other.gameObject.tag == "Player")
+        }
+        else if(other.gameObject.CompareTag("Player"))
         {
             if (((CharSquare)other.GetComponent<CharSquare>()).playerId != playerId)
             {
                 ((CharSquare)other.GetComponent<CharSquare>()).health -= damage;
                 destroySelf();
             }
-        } else if(other.gameObject.tag == "PlayerSpecialWall")
+        }
+        else if(other.gameObject.CompareTag("PlayerSpecialWall"))
         {
             if (((SquarePlayerWall)other.GetComponent<SquarePlayerWall>()).playerId != playerId)
             {
