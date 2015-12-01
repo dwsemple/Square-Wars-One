@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+// This object acts as a normal wall for all players, except the player that has the same playerId as it.
+// This player can move and shoot freely through the wall.
+
 public class SquarePlayerWall : MonoBehaviour
 {
 
@@ -12,6 +15,8 @@ public class SquarePlayerWall : MonoBehaviour
 	
 	void FixedUpdate ()
     {
+        // Animate the object.
+        // It simply cycles between the relevant player color and the wall color.
         GetComponent<SpriteRenderer>().color = colors[colorIndex];
         count++;
         if ((count % colorChange) == 0)

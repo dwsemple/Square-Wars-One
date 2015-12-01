@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+// Bullet objects shot by players.
+
 public class Bullet : MonoBehaviour
 {
 
@@ -17,7 +19,6 @@ public class Bullet : MonoBehaviour
 
     private Rigidbody2D rb2d;
 
-    // Use this for initialization
     void Awake()
     {
         rb2d = GetComponent<Rigidbody2D>();
@@ -28,6 +29,7 @@ public class Bullet : MonoBehaviour
         GetComponent<SpriteRenderer>().color = colors[playerId];
     }
 
+    // Handle collisions using Unitys inbuild physics.
     void OnTriggerEnter2D(Collider2D other)
     {
         if (other.gameObject.CompareTag("GameBoundary") || other.gameObject.CompareTag("Wall") || other.gameObject.CompareTag("WinnersSquare"))
@@ -51,7 +53,9 @@ public class Bullet : MonoBehaviour
         }
     }
 
-    void destroySelf()
+    // Used if the bullet detects that it needs to destroy itself, rather than the player object destroying it.
+    // Handles removing itself from the player objects activeBullets dictionaries as well as destroying it's own GameObject.
+    private void destroySelf()
     {
         player.removeBullet(bulletDirection, bulletListPosition);
         Destroy(gameObject);

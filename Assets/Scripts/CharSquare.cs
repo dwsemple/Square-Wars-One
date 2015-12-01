@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+// The object that a player controls.
+
 public class CharSquare : MonoBehaviour
 {
 
@@ -97,7 +99,6 @@ public class CharSquare : MonoBehaviour
         }
     }
 
-    // Use this for initialization
     void Start ()
     {
         GetComponent<SpriteRenderer>().color = colors[playerId];
@@ -133,12 +134,13 @@ public class CharSquare : MonoBehaviour
     {
         rb2d = GetComponent<Rigidbody2D>();
     }
-	
-	// Update is called once per frame
+
+    // Run every frame.
+    // Check for input from player.
 	void Update ()
     {
 
-        if (health < 1 && alive)
+        if ((health < 1) && alive)
         {
             noHealth();
             alive = false;
@@ -162,19 +164,24 @@ public class CharSquare : MonoBehaviour
                 }
             }
 
-            if (Input.GetButtonDown("Fire") && playerId == 1)
+            if (Input.GetButtonDown("Fire") && (playerId == 1))
             {
                 shoot = true;
             }
-            else if (Input.GetButtonDown("Fire2") && playerId == 2)
+            else if (Input.GetButtonDown("Fire2") && (playerId == 2))
             {
                 shoot = true;
             }
         }
     }
 
+    // Run at a consistant interval.
+    // Handle input from player.
+    // Collision detection using linecasting.
     void FixedUpdate()
     {
+
+        // Determine the direction and speed of movement for the current interval.
         float h = 0.0f;
         float v = 0.0f;
 
@@ -193,20 +200,31 @@ public class CharSquare : MonoBehaviour
         direction.Normalize();
         Vector2 velocity = direction * playerSpeed;
 
+        // Use linecasting to detect a collision if movement in this interval would cause a collision with a relevant object.
+        /* In the current iteration we need to linecast across seperate layers for walls and palyer special walls.
+           Certain player special walls are ignored when colliding. If all walls and player special walls are on the same layer this causes an issue when they are packed in close together, as only the closest object is taken into account for a collision.
+           This includes the player special walls we are allowed to ignore for movement purposes which causes the issue.
+        */
+
+        // Linecast across the wall layer we need to linecast both extremities of our movement, otherwise only the centre of our player will detect collisions and our top and bottom halves can freely move over walls.
         RaycastHit2D wallCollision = Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), new Vector2(transform.position.x + (direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime), transform.position.y + (direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
         RaycastHit2D wallCollisionUpper = Physics2D.Linecast(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y + (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Wall"));
         RaycastHit2D wallCollisionLower = Physics2D.Linecast(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y - (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Wall"));
         
+        // Linecast across the layer for player 1's special walls.
         RaycastHit2D wallCollisionP1 = Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), new Vector2(transform.position.x + (direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime), transform.position.y + (direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Player1Wall"));
         RaycastHit2D wallCollisionP1Upper = Physics2D.Linecast(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y + (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player1Wall"));
         RaycastHit2D wallCollisionP1Lower = Physics2D.Linecast(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y - (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player1Wall"));
-        
+
+        // Linecast across the layer for player 2's special walls.
         RaycastHit2D wallCollisionP2 = Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), new Vector2(transform.position.x + (direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime), transform.position.y + (direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Player2Wall"));
         RaycastHit2D wallCollisionP2Upper = Physics2D.Linecast(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y + (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player2Wall"));
         RaycastHit2D wallCollisionP2Lower = Physics2D.Linecast(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y - (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player2Wall"));
         
+        // If the linecast returns a valid collision we need to process what we want to do.
         if (wallCollision || wallCollisionUpper || wallCollisionLower || wallCollisionP1 || wallCollisionP1Upper || wallCollisionP1Lower || wallCollisionP2 || wallCollisionP2Upper || wallCollisionP2Lower)
         {
+            // We will use these attributes to determine which linecasts detected a collision and the distances between them to determine which collision is closest.
             RaycastHit2D[] collisionDetected = { wallCollision, wallCollisionUpper, wallCollisionLower };
             bool[] isWallCollision = { false, false, false };
             Vector2[] wallCollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
@@ -219,6 +237,7 @@ public class CharSquare : MonoBehaviour
             bool[] isWallP2Collision = { false, false, false };
             Vector2[] wallP2CollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
             
+            // Here we calculate which linecasts detected collisions and the distances between the player and the object for the wall layer
             int count = 0;
             foreach(RaycastHit2D collision in collisionDetected)
             {
@@ -247,7 +266,9 @@ public class CharSquare : MonoBehaviour
                 }
                 count++;
             }
-            
+
+            // Here we calculate which linecasts detected collisions and the distances between the player and the object for the player 1 special wall layer.
+            // If the special wall has the same player ID as our player we ignore it.
             int countP1 = 0;
             foreach (RaycastHit2D collision in collisionDetectedP1)
             {
@@ -269,7 +290,9 @@ public class CharSquare : MonoBehaviour
                 }
                 countP1++;
             }
-            
+
+            // Here we calculate which linecasts detected collisions and the distances between the player and the object for the player 2 special wall layer.
+            // If the special wall has the same player ID as our player we ignore it.
             int countP2 = 0;
             foreach (RaycastHit2D collision in collisionDetectedP2)
             {
@@ -292,6 +315,7 @@ public class CharSquare : MonoBehaviour
                 countP2++;
             }
             
+            // Here we determine which collision is closest on all 3 linetraces from our player, the upper trace, lower trace and middle trace and discard the others.
             int countTest = 0;
             foreach(bool collisionTest in isWallCollision)
             {
@@ -324,6 +348,7 @@ public class CharSquare : MonoBehaviour
                 countTest++;
             }
 
+            // Check to see if we actually detected any collisions with a wall type object through our previous processes.
             bool wallCollisions = false;
             foreach(bool wallCollisionDetected in isWallCollision)
             {
@@ -334,6 +359,9 @@ public class CharSquare : MonoBehaviour
                 }
             }
 
+            // If we didn't detect any wall type collisions check to see if we colided with a winner's square.
+            // If we didn't collide with a winner's square proceed as normal.
+            // If we detected a wall based collision we need to determine which linetrace (upper, middle, lower) found the closest collision and move the player the difference between themselves and the closest object they collided with to bring them flush against the object.
             if (!wallCollisions)
             {
                 bool ignoreCollision = true;
@@ -386,12 +414,15 @@ public class CharSquare : MonoBehaviour
             rb2d.velocity = velocity;
         }
 
+        // Shoot bullets if the player pressed the shoot button.
         if(shoot)
         {
             Shoot();
         }
     }
 
+    // The shoot function shoots a bullet in each direction.
+    // It will only spawn a bullet in a particular direction if there are less than maxBullets in that direction.
     private void Shoot()
     {
         foreach(BulletDirection bullets in activeBullets.Keys)
@@ -411,7 +442,9 @@ public class CharSquare : MonoBehaviour
         shoot = false;
     }
 
-    Bullet spawnBullet(Vector2 position, Vector2 direction)
+    // Function used by shoot to simply spawn a bullet moving in a particular direction.
+    // Doesn't add the bullet to the activeBullets dictionary or any other useful overhead.
+    private Bullet spawnBullet(Vector2 position, Vector2 direction)
     {
         direction.Normalize();
         GameObject newBullet = (GameObject)Instantiate(bullet, transform.position + new Vector3(position.x, position.y, 0.0f), Quaternion.identity);
@@ -421,6 +454,8 @@ public class CharSquare : MonoBehaviour
         return (Bullet)newBullet.GetComponent<Bullet>();
     }
 
+    // Removes a single bullet from the activeBullets dictionary.
+    // Used by the Bullet class to remove itself when it detects it's own collisions and needs to destroy itself.
     public void removeBullet(BulletDirection direction, int listPosition)
     {
         List<Bullet> bulletList;
@@ -437,6 +472,8 @@ public class CharSquare : MonoBehaviour
         }
     }
 
+    // Puts a movement input to the back of the movement queue.
+    // Used when releasing a movement input key to indicate that you no longer want to move in that direction.
     private void moveDirectionToBackOfQueue(MoveDirection direction)
     {
         int count = 0;
@@ -452,6 +489,8 @@ public class CharSquare : MonoBehaviour
         movementQueue.Add(direction);
     }
 
+    // Puts a movement input to the front of the movement queue.
+    // Used when pressing a movement input key to indicate that you want to move in that direction.
     private void moveDirectionToFrontOfQueue(MoveDirection direction)
     {
         int count = 0;
@@ -467,7 +506,8 @@ public class CharSquare : MonoBehaviour
         movementQueue.Insert(0, direction);
     }
 
-    public void noHealth()
+    // If the player runs out of health destroy all their bullets and player special walls, as well as themselves.
+    private void noHealth()
     {
 
         foreach (BulletDirection bulletLists in activeBullets.Keys)

@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+// Colliding with this object wins the game for the player colliding with it.
+
 public class SquareWinners : MonoBehaviour
 {
 
@@ -11,6 +13,8 @@ public class SquareWinners : MonoBehaviour
 	
 	void FixedUpdate ()
     {
+        // Animate the object.
+        // It simply cycles through the player colors and the wall color.
         GetComponent<SpriteRenderer>().color = colors[colorIndex];
         count++;
         if ((count % colorChange) == 0)
