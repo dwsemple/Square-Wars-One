@@ -174,78 +174,198 @@ public class CharSquare : MonoBehaviour {
         direction.Normalize();
         Vector2 velocity = direction * playerSpeed;
 
-        RaycastHit2D wallCollision = Physics2D.Linecast(new Vector2(transform.position.x + (direction.x * 0.33f), transform.position.y + (direction.y * 0.33f)), new Vector2(transform.position.x + (velocity.x * Time.fixedDeltaTime), transform.position.y + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
-        RaycastHit2D wallCollisionUpper = new RaycastHit2D();
-        RaycastHit2D wallCollisionLower = new RaycastHit2D();
-        if (direction.x != 0.0f)
-        {
-            wallCollisionUpper = Physics2D.Linecast(new Vector2(transform.position.x + (direction.x * 0.33f), transform.position.y + (0.16f)), new Vector2(transform.position.x + (velocity.x * Time.fixedDeltaTime), transform.position.y + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
-            wallCollisionLower = Physics2D.Linecast(new Vector2(transform.position.x + (direction.x * 0.33f), transform.position.y - (0.16f)), new Vector2(transform.position.x + (velocity.x * Time.fixedDeltaTime), transform.position.y + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
-        }
-        else if (direction.y != 0.0f)
-        {
-            wallCollisionUpper = Physics2D.Linecast(new Vector2(transform.position.x + (0.16f), transform.position.y + (direction.y * 0.33f)), new Vector2(transform.position.x + (velocity.x * Time.fixedDeltaTime), transform.position.y + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
-            wallCollisionLower = Physics2D.Linecast(new Vector2(transform.position.x - (0.16f), transform.position.y + (direction.y * 0.33f)), new Vector2(transform.position.x + (velocity.x * Time.fixedDeltaTime), transform.position.y + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
-        }
-        if (wallCollision || wallCollisionUpper || wallCollisionLower)
-        {
-            RaycastHit2D collisionDetected = new RaycastHit2D();
-            if (wallCollision)
-            {
-                collisionDetected = wallCollision;
-            }
-            else if (wallCollisionUpper)
-            {
-                collisionDetected = wallCollisionUpper;
-            }
-            else if (wallCollisionLower)
-            {
-                collisionDetected = wallCollisionLower;
-            }
+        RaycastHit2D wallCollision = Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), new Vector2(transform.position.x + (direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime), transform.position.y + (direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
+        RaycastHit2D wallCollisionUpper = Physics2D.Linecast(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y + (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Wall"));
+        RaycastHit2D wallCollisionLower = Physics2D.Linecast(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y - (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Wall"));
 
-            if (collisionDetected.rigidbody.tag == "Wall")
-            {
-                rb2d.velocity = new Vector2(0.0f, 0.0f);
-                Transform wallTransform = collisionDetected.rigidbody.GetComponent<Transform>();
-                Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
-                Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+        RaycastHit2D wallCollisionP1 = Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), new Vector2(transform.position.x + (direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime), transform.position.y + (direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Player1Wall"));
+        RaycastHit2D wallCollisionP1Upper = Physics2D.Linecast(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y + (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player1Wall"));
+        RaycastHit2D wallCollisionP1Lower = Physics2D.Linecast(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y - (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player1Wall"));
 
-                velocity = boundaryOffset - squareOffset;
-                rb2d.position += velocity;
-            } else if (collisionDetected.rigidbody.tag == "GameBoundary")
-            {
-                rb2d.velocity = new Vector2(0.0f, 0.0f);
-                Transform wallTransform = collisionDetected.rigidbody.GetComponent<Transform>();
-                Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + (((1.0f * -direction.x) * wallTransform.localScale.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + (((1.0f * -direction.y) * wallTransform.localScale.y) / 2));
-                Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+        RaycastHit2D wallCollisionP2 = Physics2D.Linecast(new Vector2(transform.position.x, transform.position.y), new Vector2(transform.position.x + (direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime), transform.position.y + (direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Player2Wall"));
+        RaycastHit2D wallCollisionP2Upper = Physics2D.Linecast(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y + (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player2Wall"));
+        RaycastHit2D wallCollisionP2Lower = Physics2D.Linecast(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f) + (Mathf.Abs(direction.x) * ((direction.x * 0.16f) + (velocity.x * Time.fixedDeltaTime))), transform.position.y - (Mathf.Abs(direction.x) * 0.16f) + (Mathf.Abs(direction.y) * ((direction.y * 0.16f) + (velocity.y * Time.fixedDeltaTime)))), 1 << LayerMask.NameToLayer("Player2Wall"));
 
-                velocity = boundaryOffset - squareOffset;
-                rb2d.position += velocity;
-            } else if (collisionDetected.rigidbody.tag == "PlayerSpecialWall") {
-                if(((SquarePlayerWall)collisionDetected.rigidbody.GetComponent<SquarePlayerWall>()).playerId != playerId)
+        if (wallCollision || wallCollisionUpper || wallCollisionLower || wallCollisionP1 || wallCollisionP1Upper || wallCollisionP1Lower || wallCollisionP2 || wallCollisionP2Upper || wallCollisionP2Lower)
+        {
+            RaycastHit2D[] collisionDetected = { wallCollision, wallCollisionUpper, wallCollisionLower };
+            bool[] isWallCollision = { false, false, false };
+            Vector2[] wallCollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
+
+            RaycastHit2D[] collisionDetectedP1 = { wallCollisionP1, wallCollisionP1Upper, wallCollisionP1Lower };
+            bool[] isWallP1Collision = { false, false, false };
+            Vector2[] wallP1CollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
+
+            RaycastHit2D[] collisionDetectedP2 = { wallCollisionP2, wallCollisionP2Upper, wallCollisionP2Lower };
+            bool[] isWallP2Collision = { false, false, false };
+            Vector2[] wallP2CollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
+
+            int count = 0;
+            foreach(RaycastHit2D collision in collisionDetected)
+            {
+                if(collision)
                 {
-                    rb2d.velocity = new Vector2(0.0f, 0.0f);
-                    Transform wallTransform = collisionDetected.rigidbody.GetComponent<Transform>();
-                    Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
-                    Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+                    if (collision.rigidbody.tag == "Wall")
+                    {
+                        rb2d.velocity = new Vector2(0.0f, 0.0f);
+                        Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
+                        Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
+                        Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
 
-                    velocity = boundaryOffset - squareOffset;
-                    rb2d.position += velocity;
-                } else
+                        wallCollisionDistance[count] = boundaryOffset - squareOffset;
+                        isWallCollision[count] = true;
+                    }
+                    else if (collision.rigidbody.tag == "GameBoundary")
+                    {
+                        rb2d.velocity = new Vector2(0.0f, 0.0f);
+                        Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
+                        Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + (((1.0f * -direction.x) * wallTransform.localScale.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + (((1.0f * -direction.y) * wallTransform.localScale.y) / 2));
+                        Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+
+                        wallCollisionDistance[count] = boundaryOffset - squareOffset;
+                        isWallCollision[count] = true;
+                    }
+                }
+                count++;
+            }
+
+            int countP1 = 0;
+            foreach (RaycastHit2D collision in collisionDetectedP1)
+            {
+                if (collision)
+                {
+                    if (collision.rigidbody.tag == "PlayerSpecialWall")
+                    {
+                        if (((SquarePlayerWall)collision.rigidbody.GetComponent<SquarePlayerWall>()).playerId != playerId)
+                        {
+                            rb2d.velocity = new Vector2(0.0f, 0.0f);
+                            Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
+                            Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
+                            Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+
+                            wallP1CollisionDistance[countP1] = boundaryOffset - squareOffset;
+                            isWallP1Collision[countP1] = true;
+                        }
+                    }
+                }
+                countP1++;
+            }
+
+            int countP2 = 0;
+            foreach (RaycastHit2D collision in collisionDetectedP2)
+            {
+                if (collision)
+                {
+                    if (collision.rigidbody.tag == "PlayerSpecialWall")
+                    {
+                        if (((SquarePlayerWall)collision.rigidbody.GetComponent<SquarePlayerWall>()).playerId != playerId)
+                        {
+                            rb2d.velocity = new Vector2(0.0f, 0.0f);
+                            Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
+                            Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
+                            Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+
+                            wallP2CollisionDistance[countP2] = boundaryOffset - squareOffset;
+                            isWallP2Collision[countP2] = true;
+                        }
+                    }
+                }
+                countP2++;
+            }
+
+            int countTest = 0;
+            foreach(bool collisionTest in isWallCollision)
+            {
+                if (isWallP1Collision[countTest] && collisionTest)
+                {
+                    if (Mathf.Abs(wallP1CollisionDistance[countTest].x + wallP1CollisionDistance[countTest].y) < Mathf.Abs(wallCollisionDistance[countTest].x + wallCollisionDistance[countTest].y))
+                    {
+                        wallCollisionDistance[countTest] = wallP1CollisionDistance[countTest];
+                    }
+                }
+                else if(isWallP1Collision[countTest])
+                {
+                    isWallCollision[countTest] = true;
+                    wallCollisionDistance[countTest] = wallP1CollisionDistance[countTest];
+                }
+
+                if (isWallP2Collision[countTest] && isWallCollision[countTest])
+                {
+                    if (Mathf.Abs(wallP2CollisionDistance[countTest].x + wallP2CollisionDistance[countTest].y) < Mathf.Abs(wallCollisionDistance[countTest].x + wallCollisionDistance[countTest].y))
+                    {
+                        wallCollisionDistance[countTest] = wallP2CollisionDistance[countTest];
+                    }
+                }
+                else if (isWallP2Collision[countTest])
+                {
+                    isWallCollision[countTest] = true;
+                    wallCollisionDistance[countTest] = wallP2CollisionDistance[countTest];
+                }
+
+                countTest++;
+            }
+
+            bool wallCollisions = false;
+            foreach(bool wallCollisionDetected in isWallCollision)
+            {
+                if(wallCollisionDetected)
+                {
+                    wallCollisions = true;
+                    break;
+                }
+            }
+
+            if (!wallCollisions)
+            {
+                bool ignoreCollision = true;
+                foreach(RaycastHit2D collision in collisionDetected)
+                {
+                    if(collision)
+                    {
+                        if (collision.rigidbody.tag == "WinnersSquare")
+                        {
+                            Application.LoadLevel(Application.loadedLevel);
+                            ignoreCollision = false;
+                        }
+                    }
+                }
+
+                if (ignoreCollision)
                 {
                     rb2d.velocity = velocity;
                 }
-            } else if (collisionDetected.rigidbody.tag == "WinnersSquare")
+            }
+            else
             {
-                Application.LoadLevel(Application.loadedLevel);
+                int countIndex = 0;
+                Vector2 useVector = new Vector2(0.0f, 0.0f);
+                bool firstVectorFound = false;
+                foreach (bool hasCollided in isWallCollision)
+                {
+                    if(hasCollided)
+                    {
+                        if(!firstVectorFound)
+                        {
+                            useVector = wallCollisionDistance[countIndex];
+                            firstVectorFound = true;
+                        }
+                        else
+                        {
+                            if(Mathf.Abs(wallCollisionDistance[countIndex].x + wallCollisionDistance[countIndex].y) < Mathf.Abs(useVector.x + useVector.y))
+                            {
+                                useVector = wallCollisionDistance[countIndex];
+                            }
+                        }
+                    }
+                    countIndex++;
+                }
+                rb2d.position += useVector;
             }
         }
-
-        if (!wallCollision && !wallCollisionUpper && !wallCollisionLower)
+        else
         {
             rb2d.velocity = velocity;
         }
-        
 
         if(shoot) {
             Shoot();
