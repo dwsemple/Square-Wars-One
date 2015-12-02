@@ -34,30 +34,30 @@ public class Bullet : MonoBehaviour
     {
         if (other.gameObject.CompareTag("GameBoundary") || other.gameObject.CompareTag("Wall") || other.gameObject.CompareTag("WinnersSquare"))
         {
-            destroySelf();
+            DestroySelf();
         }
         else if(other.gameObject.CompareTag("Player"))
         {
             if (((CharSquare)other.GetComponent<CharSquare>()).playerId != playerId)
             {
                 ((CharSquare)other.GetComponent<CharSquare>()).health -= damage;
-                destroySelf();
+                DestroySelf();
             }
         }
         else if(other.gameObject.CompareTag("PlayerSpecialWall"))
         {
             if (((SquarePlayerWall)other.GetComponent<SquarePlayerWall>()).playerId != playerId)
             {
-                destroySelf();
+                DestroySelf();
             }
         }
     }
 
     // Used if the bullet detects that it needs to destroy itself, rather than the player object destroying it.
     // Handles removing itself from the player objects activeBullets dictionaries as well as destroying it's own GameObject.
-    private void destroySelf()
+    private void DestroySelf()
     {
-        player.removeBullet(bulletDirection, bulletListPosition);
+        player.RemoveBullet(bulletDirection, bulletListPosition);
         Destroy(gameObject);
     }
 }
