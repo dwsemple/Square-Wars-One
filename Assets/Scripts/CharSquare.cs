@@ -189,7 +189,7 @@ public class CharSquare : MonoBehaviour
 
     // Run at a consistant interval.
     // Handle input from player.
-    // Collision detection using linecasting.
+    // Collision detection using raycasting.
     void FixedUpdate()
     {
 
@@ -241,7 +241,7 @@ public class CharSquare : MonoBehaviour
         if (collisionDetectedFromRayCast)
         {
 
-            // We will use these attributes to determine which linecasts detected a collision and the distances between them to determine which collision is closest.
+            // We will use these attributes to determine which raycasts detected a collision and the distances between them to determine which collision is closest.
             RaycastHit2D[] collisionDetected = { new RaycastHit2D(), new RaycastHit2D(), new RaycastHit2D() };
             bool[] isWallCollision = { false, false, false };
             Vector2[] wallCollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
