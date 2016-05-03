@@ -1,18 +1,22 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.Networking;
 
 // Bullet objects shot by players.
 
-public class Bullet : MonoBehaviour
+public class Bullet : NetworkBehaviour
 {
 
     public float directionX = 0.0f;
     public float directionY = 0.0f;
     public float speed = 0.0f;
+    [SyncVar]
     public int damage = 1;
     [HideInInspector]
     public CharSquare player;
+    [SyncVar]
     public int playerId = 0;
+
     public CharSquare.BulletDirection bulletDirection;
     public int bulletListPosition = 0;
     private Color[] colors = { Color.white, Color.blue, Color.magenta, Color.red, Color.green };
@@ -57,7 +61,8 @@ public class Bullet : MonoBehaviour
     // Handles removing itself from the player objects activeBullets dictionaries as well as destroying it's own GameObject.
     private void DestroySelf()
     {
-        player.RemoveBullet(bulletDirection, bulletListPosition);
-        Destroy(gameObject);
+        player.RpcRemoveBullet(bulletDirection, bulletListPosition);
+        player.CmdDestroyObject(gameObject.GetComponent<NetworkIdentity>().netId);
+        //NetworkServer.Destroy(gameObject);
     }
 }

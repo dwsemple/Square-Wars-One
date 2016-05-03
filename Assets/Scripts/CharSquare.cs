@@ -1,22 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
 // The object that a player controls.
 
-public class CharSquare : MonoBehaviour
+public class CharSquare : NetworkBehaviour
 {
 
     public GameObject bullet;
-    public int playerId = 0;
+
+    [SyncVar]
     public float playerSpeed = 300.0f;
+    [SyncVar]
     public float bulletSpeed = 500.0f;
+    [SyncVar]
     public int maxBullets = 3;
+
+    [SyncVar]
     public int health = 1;
+    [SyncVar]
+    public int playerId = 0;
 
     private Color[] colors = { Color.white, Color.blue, Color.magenta, Color.red, Color.green };
+    [SyncVar]
     private bool shoot = false;
+
     private List<MoveDirection> movementQueue = new List<MoveDirection>();
+    
     private IDictionary<MoveDirection, MoveAxisData> movementAxisData = new Dictionary<MoveDirection, MoveAxisData>()
     {
         { MoveDirection.NO_MOVE, new MoveAxisData(null, MoveAxis.NO_MOVE, null)  },
@@ -25,6 +36,7 @@ public class CharSquare : MonoBehaviour
         { MoveDirection.UP, new MoveAxisData("Up", MoveAxis.VERTICAL, "Up") },
         { MoveDirection.DOWN, new MoveAxisData("Down", MoveAxis.VERTICAL, "Down") }
     };
+    
     private IDictionary<BulletDirection, List<Bullet>> activeBullets = new Dictionary<BulletDirection, List<Bullet>>()
     {
         { BulletDirection.LEFT, new List<Bullet>() },
@@ -32,6 +44,7 @@ public class CharSquare : MonoBehaviour
         { BulletDirection.UP, new List<Bullet>() },
         { BulletDirection.DOWN, new List<Bullet>() }
     };
+    
     private IDictionary<BulletDirection, Vector2> bulletVelocities = new Dictionary<BulletDirection, Vector2>()
     {
         { BulletDirection.LEFT, new Vector2(-1.0f,0.0f) },
@@ -39,7 +52,9 @@ public class CharSquare : MonoBehaviour
         { BulletDirection.UP, new Vector2(0.0f,1.0f) },
         { BulletDirection.DOWN, new Vector2(0.0f,-1.0f) }
     };
+    [SyncVar]
     private bool alive = true;
+    [SyncVar]
     private bool hasWon = false;
 
     private Rigidbody2D rb2d;
@@ -142,46 +157,49 @@ public class CharSquare : MonoBehaviour
     // If the player was determined to have won the level we need to process as needed.
     void Update()
     {
-        // Process the case that the player has won the level.
-        if (hasWon)
+        if (isLocalPlayer)
         {
-            HasWon();
-        }
-        else
-        {
-            // Process the case that the player has lost all their health.
-            if ((health < 1) && alive)
+            // Process the case that the player has won the level.
+            if (hasWon)
             {
-                NoHealth();
-                alive = false;
+                CmdHasWon();
             }
-            else if (alive)
+            else
             {
-                // Detect input presses if the player has not won and has not lost all their health.
-                foreach (MoveDirection moveDirection in movementAxisData.Keys)
+                // Process the case that the player has lost all their health.
+                if ((health < 1) && alive)
                 {
-                    MoveAxisData axis;
-                    movementAxisData.TryGetValue(moveDirection, out axis);
-                    if (axis.ButtonName != null)
+                    CmdNoHealth();
+                    alive = false;
+                }
+                else if (alive)
+                {
+                    // Detect input presses if the player has not won and has not lost all their health.
+                    foreach (MoveDirection moveDirection in movementAxisData.Keys)
                     {
-                        if (Input.GetButtonDown(axis.ButtonName))
+                        MoveAxisData axis;
+                        movementAxisData.TryGetValue(moveDirection, out axis);
+                        if (axis.ButtonName != null)
                         {
-                            MoveDirectionToFrontOfQueue(moveDirection);
-                        }
-                        else if (Input.GetButtonUp(axis.ButtonName))
-                        {
-                            MoveDirectionToBackOfQueue(moveDirection);
+                            if (Input.GetButtonDown(axis.ButtonName))
+                            {
+                                MoveDirectionToFrontOfQueue(moveDirection);
+                            }
+                            else if (Input.GetButtonUp(axis.ButtonName))
+                            {
+                                MoveDirectionToBackOfQueue(moveDirection);
+                            }
                         }
                     }
-                }
 
-                if (Input.GetButtonDown("Fire") && (playerId == 1))
-                {
-                    shoot = true;
-                }
-                else if (Input.GetButtonDown("Fire2") && (playerId == 2))
-                {
-                    shoot = true;
+                    if (Input.GetButtonDown("Fire") && (playerId == 1))
+                    {
+                        shoot = true;
+                    }
+                    else if (Input.GetButtonDown("Fire2") && (playerId == 2))
+                    {
+                        shoot = true;
+                    }
                 }
             }
         }
@@ -192,97 +210,110 @@ public class CharSquare : MonoBehaviour
     // Collision detection using raycasting.
     void FixedUpdate()
     {
-
-        // Determine the direction and speed of movement for the current interval.
-        float h = 0.0f;
-        float v = 0.0f;
-
-        MoveAxisData currentAxis;
-        movementAxisData.TryGetValue(movementQueue[0], out currentAxis);
-        if (currentAxis.AxisAffected == MoveAxis.HORIZONTAL)
+        if (isLocalPlayer)
         {
-            h = Input.GetAxis(currentAxis.AxisName);
-        }
-        else if (currentAxis.AxisAffected == MoveAxis.VERTICAL)
-        {
-            v = Input.GetAxis(currentAxis.AxisName);
-        }
+            // Determine the direction and speed of movement for the current interval.
+            float h = 0.0f;
+            float v = 0.0f;
 
-        Vector2 direction = new Vector2(h, v);
-        direction.Normalize();
-        Vector2 velocity = direction * playerSpeed;
-
-        // Use raycasting to detect a collision if movement in this interval would cause a collision with a relevant object.
-        RaycastHit2D[] wallCollision = Physics2D.RaycastAll(new Vector2(transform.position.x, transform.position.y), direction, (Mathf.Abs(direction.x * 0.16f) + (Mathf.Abs(velocity.x) * Time.fixedDeltaTime)) + (Mathf.Abs(direction.y * 0.16f) + (Mathf.Abs(velocity.y) * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
-        RaycastHit2D[] wallCollisionUpper = Physics2D.RaycastAll(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), direction, (Mathf.Abs(direction.x * 0.16f) + (Mathf.Abs(velocity.x) * Time.fixedDeltaTime)) + (Mathf.Abs(direction.y * 0.16f) + (Mathf.Abs(velocity.y) * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
-        RaycastHit2D[] wallCollisionLower = Physics2D.RaycastAll(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), direction, (Mathf.Abs(direction.x * 0.16f) + (Mathf.Abs(velocity.x) * Time.fixedDeltaTime)) + (Mathf.Abs(direction.y * 0.16f) + (Mathf.Abs(velocity.y) * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
-
-        // Determine if any collisions at all were detected.
-        RaycastHit2D[][] collisionsDetected = { wallCollision, wallCollisionUpper, wallCollisionLower };
-        bool collisionDetectedFromRayCast = false;
-        foreach (RaycastHit2D[] collisionDetected in collisionsDetected)
-        {
-            foreach (RaycastHit2D collision in collisionDetected)
+            MoveAxisData currentAxis;
+            movementAxisData.TryGetValue(movementQueue[0], out currentAxis);
+            if (currentAxis.AxisAffected == MoveAxis.HORIZONTAL)
             {
-                if (collision)
+                h = Input.GetAxis(currentAxis.AxisName);
+            }
+            else if (currentAxis.AxisAffected == MoveAxis.VERTICAL)
+            {
+                v = Input.GetAxis(currentAxis.AxisName);
+            }
+
+            Vector2 direction = new Vector2(h, v);
+            direction.Normalize();
+            Vector2 velocity = direction * playerSpeed;
+
+            // Use raycasting to detect a collision if movement in this interval would cause a collision with a relevant object.
+            RaycastHit2D[] wallCollision = Physics2D.RaycastAll(new Vector2(transform.position.x, transform.position.y), direction, (Mathf.Abs(direction.x * 0.16f) + (Mathf.Abs(velocity.x) * Time.fixedDeltaTime)) + (Mathf.Abs(direction.y * 0.16f) + (Mathf.Abs(velocity.y) * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
+            RaycastHit2D[] wallCollisionUpper = Physics2D.RaycastAll(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), direction, (Mathf.Abs(direction.x * 0.16f) + (Mathf.Abs(velocity.x) * Time.fixedDeltaTime)) + (Mathf.Abs(direction.y * 0.16f) + (Mathf.Abs(velocity.y) * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
+            RaycastHit2D[] wallCollisionLower = Physics2D.RaycastAll(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), direction, (Mathf.Abs(direction.x * 0.16f) + (Mathf.Abs(velocity.x) * Time.fixedDeltaTime)) + (Mathf.Abs(direction.y * 0.16f) + (Mathf.Abs(velocity.y) * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
+
+            // Determine if any collisions at all were detected.
+            RaycastHit2D[][] collisionsDetected = { wallCollision, wallCollisionUpper, wallCollisionLower };
+            bool collisionDetectedFromRayCast = false;
+            foreach (RaycastHit2D[] collisionDetected in collisionsDetected)
+            {
+                foreach (RaycastHit2D collision in collisionDetected)
                 {
-                    collisionDetectedFromRayCast = true;
+                    if (collision)
+                    {
+                        collisionDetectedFromRayCast = true;
+                        break;
+                    }
+                }
+                if (collisionDetectedFromRayCast)
+                {
                     break;
                 }
             }
+
+            // If the raycasts return a collision we need to process what we want to do.
+            // Otherwise we move as normal.
             if (collisionDetectedFromRayCast)
             {
-                break;
-            }
-        }
-        
-        // If the raycasts return a collision we need to process what we want to do.
-        // Otherwise we move as normal.
-        if (collisionDetectedFromRayCast)
-        {
 
-            // We will use these attributes to determine which raycasts detected a collision and the distances between them to determine which collision is closest.
-            RaycastHit2D[] collisionDetected = { new RaycastHit2D(), new RaycastHit2D(), new RaycastHit2D() };
-            bool[] isWallCollision = { false, false, false };
-            Vector2[] wallCollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
+                // We will use these attributes to determine which raycasts detected a collision and the distances between them to determine which collision is closest.
+                RaycastHit2D[] collisionDetected = { new RaycastHit2D(), new RaycastHit2D(), new RaycastHit2D() };
+                bool[] isWallCollision = { false, false, false };
+                Vector2[] wallCollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
 
-            // Here we calculate which raycasts detected collisions and the distances between the player and the object for the wall layer.
-            /* Physics2D.RaycastAll returns an array of collisions in the order of closest first.
-               We use this to assume that the first object we find in the RaycastHit2D array that we care about colliding with is the closest object to the player in the array that we care about colliding with.
-               If this changes and Physics2D.RaycastAll returns an unsorted array this will need to be revisted to determine which object in the array is closest to the player.
-            */
-            int count = 0;
-            foreach (RaycastHit2D[] collisions in collisionsDetected)
-            {
-                foreach (RaycastHit2D collision in collisions)
+                // Here we calculate which raycasts detected collisions and the distances between the player and the object for the wall layer.
+                /* Physics2D.RaycastAll returns an array of collisions in the order of closest first.
+                   We use this to assume that the first object we find in the RaycastHit2D array that we care about colliding with is the closest object to the player in the array that we care about colliding with.
+                   If this changes and Physics2D.RaycastAll returns an unsorted array this will need to be revisted to determine which object in the array is closest to the player.
+                */
+                int count = 0;
+                foreach (RaycastHit2D[] collisions in collisionsDetected)
                 {
-                    if (collision && !isWallCollision[count])
+                    foreach (RaycastHit2D collision in collisions)
                     {
-                        if (collision.rigidbody.CompareTag("Wall"))
+                        if (collision && !isWallCollision[count])
                         {
-                            rb2d.velocity = new Vector2(0.0f, 0.0f);
-                            Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
-                            Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
-                            Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+                            if (collision.rigidbody.CompareTag("Wall"))
+                            {
+                                rb2d.velocity = new Vector2(0.0f, 0.0f);
+                                Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
+                                Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
+                                Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
 
-                            wallCollisionDistance[count] = boundaryOffset - squareOffset;
-                            isWallCollision[count] = true;
-                            collisionDetected[count] = collision;
-                        }
-                        else if (collision.rigidbody.CompareTag("GameBoundary"))
-                        {
-                            rb2d.velocity = new Vector2(0.0f, 0.0f);
-                            Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
-                            Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + (((1.0f * -direction.x) * wallTransform.localScale.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + (((1.0f * -direction.y) * wallTransform.localScale.y) / 2));
-                            Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+                                wallCollisionDistance[count] = boundaryOffset - squareOffset;
+                                isWallCollision[count] = true;
+                                collisionDetected[count] = collision;
+                            }
+                            else if (collision.rigidbody.CompareTag("GameBoundary"))
+                            {
+                                rb2d.velocity = new Vector2(0.0f, 0.0f);
+                                Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
+                                Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + (((1.0f * -direction.x) * wallTransform.localScale.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + (((1.0f * -direction.y) * wallTransform.localScale.y) / 2));
+                                Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
 
-                            wallCollisionDistance[count] = boundaryOffset - squareOffset;
-                            isWallCollision[count] = true;
-                            collisionDetected[count] = collision;
-                        }
-                        else if (collision.rigidbody.CompareTag("PlayerSpecialWall"))
-                        {
-                            if (((SquarePlayerWall)collision.rigidbody.GetComponent<SquarePlayerWall>()).playerId != playerId)
+                                wallCollisionDistance[count] = boundaryOffset - squareOffset;
+                                isWallCollision[count] = true;
+                                collisionDetected[count] = collision;
+                            }
+                            else if (collision.rigidbody.CompareTag("PlayerSpecialWall"))
+                            {
+                                if (((SquarePlayerWall)collision.rigidbody.GetComponent<SquarePlayerWall>()).playerId != playerId)
+                                {
+                                    rb2d.velocity = new Vector2(0.0f, 0.0f);
+                                    Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
+                                    Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
+                                    Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+
+                                    wallCollisionDistance[count] = boundaryOffset - squareOffset;
+                                    isWallCollision[count] = true;
+                                    collisionDetected[count] = collision;
+                                }
+                            }
+                            else if (collision.rigidbody.CompareTag("WinnersSquare"))
                             {
                                 rb2d.velocity = new Vector2(0.0f, 0.0f);
                                 Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
@@ -294,93 +325,89 @@ public class CharSquare : MonoBehaviour
                                 collisionDetected[count] = collision;
                             }
                         }
-                        else if (collision.rigidbody.CompareTag("WinnersSquare"))
+                        else
                         {
-                            rb2d.velocity = new Vector2(0.0f, 0.0f);
-                            Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
-                            Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
-                            Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
-
-                            wallCollisionDistance[count] = boundaryOffset - squareOffset;
-                            isWallCollision[count] = true;
-                            collisionDetected[count] = collision;
+                            break;
                         }
                     }
-                    else
+                    count++;
+                }
+
+                // Check to see if we actually detected any collisions that we care about colliding with.
+                bool wallCollisions = false;
+                foreach (bool wallCollisionDetected in isWallCollision)
+                {
+                    if (wallCollisionDetected)
                     {
+                        wallCollisions = true;
                         break;
                     }
                 }
-                count++;
-            }
 
-            // Check to see if we actually detected any collisions that we care about colliding with.
-            bool wallCollisions = false;
-            foreach (bool wallCollisionDetected in isWallCollision)
-            {
-                if (wallCollisionDetected)
+                // If we didn't detect any relevant collisions the player will move as normal.
+                // If we detected a relevant collision we need to determine which raytrace (upper, middle, lower) found the closest collision and move the player the difference between themselves and the closest object they collided with to bring them flush against the object.
+                // If the closest relevant collision is a WinnersSquare we set hasWon to true which will be processed through the next update frame.
+                if (!wallCollisions)
                 {
-                    wallCollisions = true;
-                    break;
+                    rb2d.velocity = velocity;
                 }
-            }
-
-            // If we didn't detect any relevant collisions the player will move as normal.
-            // If we detected a relevant collision we need to determine which raytrace (upper, middle, lower) found the closest collision and move the player the difference between themselves and the closest object they collided with to bring them flush against the object.
-            // If the closest relevant collision is a WinnersSquare we set hasWon to true which will be processed through the next update frame.
-            if (!wallCollisions)
-            {
-                rb2d.velocity = velocity;
-            }
-            else
-            {
-                int countIndex = 0;
-                Vector2 useVector = new Vector2(0.0f, 0.0f);
-                RaycastHit2D useCollision = new RaycastHit2D();
-                bool firstVectorFound = false;
-                foreach (bool hasCollided in isWallCollision)
+                else
                 {
-                    if (hasCollided)
+                    int countIndex = 0;
+                    Vector2 useVector = new Vector2(0.0f, 0.0f);
+                    RaycastHit2D useCollision = new RaycastHit2D();
+                    bool firstVectorFound = false;
+                    foreach (bool hasCollided in isWallCollision)
                     {
-                        if (!firstVectorFound)
+                        if (hasCollided)
                         {
-                            useVector = wallCollisionDistance[countIndex];
-                            useCollision = collisionDetected[countIndex];
-                            firstVectorFound = true;
-                        }
-                        else
-                        {
-                            if (Mathf.Abs(wallCollisionDistance[countIndex].x + wallCollisionDistance[countIndex].y) < Mathf.Abs(useVector.x + useVector.y))
+                            if (!firstVectorFound)
                             {
                                 useVector = wallCollisionDistance[countIndex];
                                 useCollision = collisionDetected[countIndex];
+                                firstVectorFound = true;
+                            }
+                            else
+                            {
+                                if (Mathf.Abs(wallCollisionDistance[countIndex].x + wallCollisionDistance[countIndex].y) < Mathf.Abs(useVector.x + useVector.y))
+                                {
+                                    useVector = wallCollisionDistance[countIndex];
+                                    useCollision = collisionDetected[countIndex];
+                                }
                             }
                         }
+                        countIndex++;
                     }
-                    countIndex++;
-                }
-                rb2d.position += useVector;
-                if (useCollision.rigidbody.CompareTag("WinnersSquare"))
-                {
-                    hasWon = true;
+                    rb2d.position += useVector;
+                    if (useCollision.rigidbody.CompareTag("WinnersSquare"))
+                    {
+                        hasWon = true;
+                    }
                 }
             }
-        }
-        else
-        {
-            rb2d.velocity = velocity;
-        }
+            else
+            {
+                rb2d.velocity = velocity;
+            }
 
-        // Shoot bullets if the player pressed the shoot button.
-        if (shoot)
-        {
-            Shoot();
+            // Shoot bullets if the player pressed the shoot button.
+            if (shoot)
+            {
+                CmdShoot();
+            }
         }
     }
 
     // The shoot function shoots a bullet in each direction.
     // It will only spawn a bullet in a particular direction if there are less than maxBullets in that direction.
-    private void Shoot()
+    private void CmdShoot()
+    {
+        CmdSpawnBullet();
+        shoot = false;
+    }
+
+    [Command]
+    private void CmdSpawnBullet()
     {
         foreach (BulletDirection bullets in activeBullets.Keys)
         {
@@ -390,30 +417,37 @@ public class CharSquare : MonoBehaviour
             {
                 Vector2 bulletVelocity;
                 bulletVelocities.TryGetValue(bullets, out bulletVelocity);
-                Bullet newBullet = SpawnBullet(new Vector2(0.0f, 0.0f), bulletVelocity);
-                newBullet.bulletDirection = bullets;
-                newBullet.bulletListPosition = bulletList.Count;
-                bulletList.Add(newBullet);
+                bulletVelocity.Normalize();
+                GameObject newBullet = (GameObject)Instantiate(bullet, transform.position + new Vector3(0.0f, 0.0f, 0.0f), Quaternion.identity);
+                ((Rigidbody2D)newBullet.GetComponent<Rigidbody2D>()).AddForce(bulletVelocity * bulletSpeed);
+                ((Bullet)newBullet.GetComponent<Bullet>()).player = this;
+                ((Bullet)newBullet.GetComponent<Bullet>()).playerId = playerId;
+                ((Bullet)newBullet.GetComponent<Bullet>()).bulletDirection = bullets;
+                ((Bullet)newBullet.GetComponent<Bullet>()).bulletListPosition = bulletList.Count;
+                bulletList.Add(((Bullet)newBullet.GetComponent<Bullet>()));
+                NetworkServer.Spawn(newBullet);
             }
         }
-        shoot = false;
     }
-
+    /*
     // Function used by shoot to simply spawn a bullet moving in a particular direction.
     // Doesn't add the bullet to the activeBullets dictionary or any other useful overhead.
-    private Bullet SpawnBullet(Vector2 position, Vector2 direction)
+    [Command]
+    private Bullet CmdSpawnBullet(Vector2 position, Vector2 direction)
     {
         direction.Normalize();
         GameObject newBullet = (GameObject)Instantiate(bullet, transform.position + new Vector3(position.x, position.y, 0.0f), Quaternion.identity);
         ((Rigidbody2D)newBullet.GetComponent<Rigidbody2D>()).AddForce(direction * bulletSpeed);
         ((Bullet)newBullet.GetComponent<Bullet>()).player = this;
         ((Bullet)newBullet.GetComponent<Bullet>()).playerId = playerId;
+        NetworkServer.Spawn(newBullet);
         return (Bullet)newBullet.GetComponent<Bullet>();
-    }
+    }*/
 
     // Removes a single bullet from the activeBullets dictionary.
     // Used by the Bullet class to remove itself when it detects it's own collisions and needs to destroy itself.
-    public void RemoveBullet(BulletDirection direction, int listPosition)
+    [ClientRpc]
+    public void RpcRemoveBullet(BulletDirection direction, int listPosition)
     {
         List<Bullet> bulletList;
         activeBullets.TryGetValue(direction, out bulletList);
@@ -464,7 +498,8 @@ public class CharSquare : MonoBehaviour
     }
 
     // If the player runs out of health destroy all their bullets and player special walls, as well as themselves.
-    private void NoHealth()
+    [Command]
+    private void CmdNoHealth()
     {
 
         foreach (BulletDirection bulletLists in activeBullets.Keys)
@@ -474,7 +509,8 @@ public class CharSquare : MonoBehaviour
             int count = bulletList.Count - 1;
             while (bulletList.Count > 0)
             {
-                Destroy(bulletList[count].gameObject);
+                CmdDestroyObject(bulletList[count].gameObject.GetComponent<NetworkIdentity>().netId);
+                //NetworkServer.Destroy(bulletList[count].gameObject);
                 bulletList.RemoveAt(count);
                 count--;
             }
@@ -485,16 +521,26 @@ public class CharSquare : MonoBehaviour
         {
             if (((SquarePlayerWall)playerWall.GetComponent<SquarePlayerWall>()).playerId == playerId)
             {
-                DestroyObject(playerWall);
+                CmdDestroyObject(playerWall.GetComponent<NetworkIdentity>().netId);
+                //NetworkServer.Destroy(playerWall);
             }
         }
 
-        Destroy(gameObject);
+        CmdDestroyObject(gameObject.GetComponent<NetworkIdentity>().netId);
+        //NetworkServer.Destroy(gameObject);
     }
 
     // If the player has won the level process as desired.
-    private void HasWon()
+    [Command]
+    private void CmdHasWon()
     {
         Application.LoadLevel(Application.loadedLevel);
+    }
+
+    [Command]
+    public void CmdDestroyObject(NetworkInstanceId id)
+    {
+        GameObject destroyObject = NetworkServer.FindLocalObject(id);
+        NetworkServer.Destroy(destroyObject);
     }
 }
