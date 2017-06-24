@@ -15,6 +15,7 @@ public class Bullet : MonoBehaviour
     public int playerId = 0;
     public CharSquare.BulletDirection bulletDirection;
     public int bulletListPosition = 0;
+	private int bulletState = 0;
     private Color[] colors = { Color.white, Color.blue, Color.magenta, Color.red, Color.green };
 
     private Rigidbody2D rb2d;
@@ -57,7 +58,10 @@ public class Bullet : MonoBehaviour
     // Handles removing itself from the player objects activeBullets dictionaries as well as destroying it's own GameObject.
     private void DestroySelf()
     {
-        player.RemoveBullet(bulletDirection, bulletListPosition);
-        Destroy(gameObject);
+		if (bulletState != 1) {
+			bulletState = 1;
+			player.RemoveBullet (bulletDirection, bulletListPosition);
+			Destroy (gameObject);
+		}
     }
 }
