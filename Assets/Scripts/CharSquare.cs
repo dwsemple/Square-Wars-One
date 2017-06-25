@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using BeardedManStudios.Forge.Networking;
 
 // The object that a player controls.
 
-public class CharSquare : MonoBehaviour
+public class CharSquare : SimpleNetworkedMonoBehaviour
 {
 
     public GameObject bullet;
@@ -140,19 +141,21 @@ public class CharSquare : MonoBehaviour
     // Check for input from player.
     // If the player has lost all their health we need to process as needed.
     // If the player was determined to have won the level we need to process as needed.
-    void Update()
+    protected override void OwnerUpdate()
     {
+		base.OwnerUpdate();
+
         // Process the case that the player has won the level.
         if (hasWon)
         {
-            HasWon();
+            RPC("HasWon");
         }
         else
         {
             // Process the case that the player has lost all their health.
             if ((health < 1) && alive)
             {
-                NoHealth();
+                RPC("NoHealth");
                 alive = false;
             }
             else if (alive)
@@ -166,11 +169,11 @@ public class CharSquare : MonoBehaviour
                     {
                         if (Input.GetButtonDown(axis.ButtonName))
                         {
-                            MoveDirectionToFrontOfQueue(moveDirection);
+                            RPC("MoveDirectionToFrontOfQueue", moveDirection);
                         }
                         else if (Input.GetButtonUp(axis.ButtonName))
                         {
-                            MoveDirectionToBackOfQueue(moveDirection);
+                            RPC("MoveDirectionToBackOfQueue", moveDirection);
                         }
                     }
                 }
@@ -190,8 +193,9 @@ public class CharSquare : MonoBehaviour
     // Run at a consistant interval.
     // Handle input from player.
     // Collision detection using raycasting.
-    void FixedUpdate()
+    protected override void OwnerFixedUpdate()
     {
+		base.OwnerFixedUpdate();
 
         // Determine the direction and speed of movement for the current interval.
         float h = 0.0f;
@@ -368,7 +372,7 @@ public class CharSquare : MonoBehaviour
         }
         else
         {
-            rb2d.velocity = velocity;
+			RPC("ChangePlayerVelocity", velocity);
         }
 
         // Shoot bullets if the player pressed the shoot button.
@@ -377,6 +381,20 @@ public class CharSquare : MonoBehaviour
             Shoot();
         }
     }
+
+	// Adjust player position on all clients.
+	[BRPC]
+	private void AdjustPlayerPosition(Vector2 newPosition)
+	{
+		rb2d.position += newPosition;
+	}
+
+	// Change player velocity on all clients.
+	[BRPC]
+	private void ChangePlayerVelocity(Vector2 newVelocity)
+	{
+		rb2d.velocity = newVelocity;
+	}
 
     // The shoot function shoots a bullet in each direction.
     // It will only spawn a bullet in a particular direction if there are less than maxBullets in that direction.
@@ -390,26 +408,40 @@ public class CharSquare : MonoBehaviour
             {
                 Vector2 bulletVelocity;
                 bulletVelocities.TryGetValue(bullets, out bulletVelocity);
-                Bullet newBullet = SpawnBullet(new Vector2(0.0f, 0.0f), bulletVelocity);
-                newBullet.bulletDirection = bullets;
-                newBullet.bulletListPosition = bulletList.Count;
-                bulletList.Add(newBullet);
+                Bullet newBullet = SpawnBullet(new Vector2(0.0f, 0.0f));
+				Vector2 direction = bulletVelocity.Normalize();
+				RPC("InstantiateBullet", newBullet, direction, bullets, bulletList.Count);
+				RPC("AddBulletToList", newBullet);
             }
         }
         shoot = false;
     }
 
+	// Instantiate new bullet attributes across the network.
+	[BPRC]
+	private void InstantiateBullet(Bullet newBullet, Vector2 direction, CharSquare.BulletDirection bulletDirection, int bulletListPosition)
+	{
+		((Rigidbody2D)newBullet.GetComponent<Rigidbody2D>()).AddForce(direction * bulletSpeed);
+		newBullet.player = this;
+		newBullet.playerId = playerId;
+		newBullet.bulletDirection = bulletDirection;
+		newBullet.bulletListPosition = bulletListPosition;
+	}
+
     // Function used by shoot to simply spawn a bullet moving in a particular direction.
     // Doesn't add the bullet to the activeBullets dictionary or any other useful overhead.
-    private Bullet SpawnBullet(Vector2 position, Vector2 direction)
+    private Bullet SpawnBullet(Vector2 position)
     {
-        direction.Normalize();
-        GameObject newBullet = (GameObject)Instantiate(bullet, transform.position + new Vector3(position.x, position.y, 0.0f), Quaternion.identity);
-        ((Rigidbody2D)newBullet.GetComponent<Rigidbody2D>()).AddForce(direction * bulletSpeed);
-        ((Bullet)newBullet.GetComponent<Bullet>()).player = this;
-        ((Bullet)newBullet.GetComponent<Bullet>()).playerId = playerId;
+        GameObject newBullet = Networking.Instantiate("Bullet", transform.position + new Vector3(position.x, position.y, 0.0f), Quaternion.identity);
         return (Bullet)newBullet.GetComponent<Bullet>();
     }
+
+	// Adds new bullets to bullet list for each client on the network.
+	[BRPC]
+	private void AddBulletToList(Bullet newBullet)
+	{
+		bulletList.Add(newBullet);
+	}
 
     // Removes a single bullet from the activeBullets dictionary.
     // Used by the Bullet class to remove itself when it detects it's own collisions and needs to destroy itself.
@@ -431,6 +463,7 @@ public class CharSquare : MonoBehaviour
 
     // Puts a movement input to the back of the movement queue.
     // Used when releasing a movement input key to indicate that you no longer want to move in that direction.
+	[BRPC]
     private void MoveDirectionToBackOfQueue(MoveDirection direction)
     {
         int count = 0;
@@ -448,6 +481,7 @@ public class CharSquare : MonoBehaviour
 
     // Puts a movement input to the front of the movement queue.
     // Used when pressing a movement input key to indicate that you want to move in that direction.
+	[BRPC]
     private void MoveDirectionToFrontOfQueue(MoveDirection direction)
     {
         int count = 0;
@@ -464,6 +498,7 @@ public class CharSquare : MonoBehaviour
     }
 
     // If the player runs out of health destroy all their bullets and player special walls, as well as themselves.
+	[BRPC]
     private void NoHealth()
     {
 
@@ -474,7 +509,7 @@ public class CharSquare : MonoBehaviour
             int count = bulletList.Count - 1;
             while (bulletList.Count > 0)
             {
-                Destroy(bulletList[count].gameObject);
+                Networking.Destroy(bulletList[count]);
                 bulletList.RemoveAt(count);
                 count--;
             }
@@ -485,14 +520,15 @@ public class CharSquare : MonoBehaviour
         {
             if (((SquarePlayerWall)playerWall.GetComponent<SquarePlayerWall>()).playerId == playerId)
             {
-                DestroyObject(playerWall);
+                Networking.Destroy(playerWall);
             }
         }
 
-        Destroy(gameObject);
+        Networking.Destroy(this);
     }
 
     // If the player has won the level process as desired.
+	[BRPC]
     private void HasWon()
     {
         Application.LoadLevel(Application.loadedLevel);

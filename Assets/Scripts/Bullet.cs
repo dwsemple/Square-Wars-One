@@ -1,9 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
+using BeardedManStudios.Forge.Networking;
 
 // Bullet objects shot by players.
 
-public class Bullet : MonoBehaviour
+public class Bullet : SimpleNetworkedMonoBehaviour
 {
 
     public float directionX = 0.0f;
@@ -33,35 +34,48 @@ public class Bullet : MonoBehaviour
     // Handle collisions using Unitys inbuild physics.
     void OnTriggerEnter2D(Collider2D other)
     {
+		if (!isOwner)
+		{
+			return;
+		}
+
         if (other.gameObject.CompareTag("GameBoundary") || other.gameObject.CompareTag("Wall") || other.gameObject.CompareTag("WinnersSquare"))
         {
-            DestroySelf();
+			RPC("DestroySelf");
         }
         else if(other.gameObject.CompareTag("Player"))
         {
             if (((CharSquare)other.GetComponent<CharSquare>()).playerId != playerId)
             {
-                ((CharSquare)other.GetComponent<CharSquare>()).health -= damage;
-                DestroySelf();
+				RPC("DamagePlayer", ((CharSquare)other.GetComponent<CharSquare>()));
+				RPC("DestroySelf");
             }
         }
         else if(other.gameObject.CompareTag("PlayerSpecialWall"))
         {
             if (((SquarePlayerWall)other.GetComponent<SquarePlayerWall>()).playerId != playerId)
             {
-                DestroySelf();
+				RPC("DestroySelf");
             }
         }
     }
 
     // Used if the bullet detects that it needs to destroy itself, rather than the player object destroying it.
     // Handles removing itself from the player objects activeBullets dictionaries as well as destroying it's own GameObject.
+	[BRPC]
     private void DestroySelf()
     {
 		if (bulletState != 1) {
 			bulletState = 1;
 			player.RemoveBullet (bulletDirection, bulletListPosition);
-			Destroy (gameObject);
+			Networking.Destroy(this);
 		}
     }
+
+	// Used to ensure all clients apply damage correctly on the network when the bullet collides with a player.
+	[BRPC]
+	private void DamagePlayer(CharSquare otherPlayer)
+	{
+		otherPlayer.health -= damage;
+	}
 }
