@@ -13,6 +13,7 @@ namespace BeardedManStudios.Forge.Networking.Unity
 		public GameObject[] CubeForgeGameNetworkObject = null;
 		public GameObject[] ExampleProximityPlayerNetworkObject = null;
 		public GameObject[] NetworkCameraNetworkObject = null;
+		public GameObject[] CharSquareNetworkObject = null;
 
 		private void Start()
 		{
@@ -113,6 +114,29 @@ namespace BeardedManStudios.Forge.Networking.Unity
 							objectInitialized(newObj, obj);
 					});
 				}
+				else if (obj is CharSquareNetworkObject)
+				{
+					MainThreadManager.Run(() =>
+					{
+						NetworkBehavior newObj = null;
+						if (!NetworkBehavior.skipAttachIds.TryGetValue(obj.NetworkId, out newObj))
+						{
+							if (CharSquareNetworkObject.Length > 0 && CharSquareNetworkObject[obj.CreateCode] != null)
+							{
+								var go = Instantiate(CharSquareNetworkObject[obj.CreateCode]);
+								newObj = go.GetComponent<NetworkBehavior>();
+							}
+						}
+
+						if (newObj == null)
+							return;
+						
+						newObj.Initialize(obj);
+
+						if (objectInitialized != null)
+							objectInitialized(newObj, obj);
+					});
+				}
 			};
 		}
 
@@ -166,6 +190,18 @@ namespace BeardedManStudios.Forge.Networking.Unity
 			var netBehavior = go.GetComponent<NetworkBehavior>() as NetworkCameraBehavior;
 			var obj = netBehavior.CreateNetworkObject(Networker, index);
 			go.GetComponent<NetworkCameraBehavior>().networkObject = (NetworkCameraNetworkObject)obj;
+
+			FinializeInitialization(go, netBehavior, obj, position, rotation, sendTransform);
+			
+			return netBehavior;
+		}
+
+		public CharSquareBehavior InstantiateCharSquareNetworkObject(int index = 0, Vector3? position = null, Quaternion? rotation = null, bool sendTransform = true)
+		{
+			var go = Instantiate(CharSquareNetworkObject[index]);
+			var netBehavior = go.GetComponent<NetworkBehavior>() as CharSquareBehavior;
+			var obj = netBehavior.CreateNetworkObject(Networker, index);
+			go.GetComponent<CharSquareBehavior>().networkObject = (CharSquareNetworkObject)obj;
 
 			FinializeInitialization(go, netBehavior, obj, position, rotation, sendTransform);
 			

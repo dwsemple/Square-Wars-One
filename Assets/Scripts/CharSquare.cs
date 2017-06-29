@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using BeardedManStudios.Forge.Networking.Generated;
 using UnityEngine;
 
 // The object that a player controls.
 
-public class CharSquare : MonoBehaviour
+public class CharSquare : CharSquareBehaviour
 {
 
     public GameObject bullet;
