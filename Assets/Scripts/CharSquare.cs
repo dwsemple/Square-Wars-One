@@ -4,14 +4,17 @@ using BeardedManStudios.Forge.Networking.Generated;
 using UnityEngine;
 
 // The object that a player controls.
+using BeardedManStudios.Forge.Networking;
+using BeardedManStudios.Forge.Networking.Unity;
 
-public class CharSquare : CharSquareBehaviour
+public class CharSquare : CharSquareBehavior
 {
 
     public GameObject bullet;
     public int playerId = 0;
     public float playerSpeed = 300.0f;
     public float bulletSpeed = 500.0f;
+	public int bulletDamage = 1;
     public int maxBullets = 3;
     public int health = 1;
 
@@ -143,6 +146,12 @@ public class CharSquare : CharSquareBehaviour
     // If the player was determined to have won the level we need to process as needed.
     void Update()
     {
+
+		if(!networkObject.IsOwner)
+		{
+			return;
+		}
+
         // Process the case that the player has won the level.
         if (hasWon)
         {
@@ -167,11 +176,11 @@ public class CharSquare : CharSquareBehaviour
                     {
                         if (Input.GetButtonDown(axis.ButtonName))
                         {
-                            MoveDirectionToFrontOfQueue(moveDirection);
+							MoveDirectionToFrontOfQueue(moveDirection);
                         }
                         else if (Input.GetButtonUp(axis.ButtonName))
                         {
-                            MoveDirectionToBackOfQueue(moveDirection);
+							MoveDirectionToBackOfQueue(moveDirection);
                         }
                     }
                 }
@@ -193,6 +202,14 @@ public class CharSquare : CharSquareBehaviour
     // Collision detection using raycasting.
     void FixedUpdate()
     {
+		if(!networkObject.IsOwner)
+		{
+			if (rb2d.position != networkObject.position)
+			{
+				rb2d.position = networkObject.position;
+			}
+			return;
+		}
 
         // Determine the direction and speed of movement for the current interval.
         float h = 0.0f;
@@ -261,7 +278,7 @@ public class CharSquare : CharSquareBehaviour
                     {
                         if (collision.rigidbody.CompareTag("Wall"))
                         {
-                            rb2d.velocity = new Vector2(0.0f, 0.0f);
+							rb2d.velocity = Vector2.zero;
                             Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
                             Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
                             Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
@@ -272,7 +289,7 @@ public class CharSquare : CharSquareBehaviour
                         }
                         else if (collision.rigidbody.CompareTag("GameBoundary"))
                         {
-                            rb2d.velocity = new Vector2(0.0f, 0.0f);
+							rb2d.velocity = Vector2.zero;
                             Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
                             Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + (((1.0f * -direction.x) * wallTransform.localScale.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + (((1.0f * -direction.y) * wallTransform.localScale.y) / 2));
                             Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
@@ -285,7 +302,7 @@ public class CharSquare : CharSquareBehaviour
                         {
                             if (((SquarePlayerWall)collision.rigidbody.GetComponent<SquarePlayerWall>()).playerId != playerId)
                             {
-                                rb2d.velocity = new Vector2(0.0f, 0.0f);
+								rb2d.velocity = Vector2.zero;
                                 Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
                                 Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
                                 Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
@@ -297,7 +314,7 @@ public class CharSquare : CharSquareBehaviour
                         }
                         else if (collision.rigidbody.CompareTag("WinnersSquare"))
                         {
-                            rb2d.velocity = new Vector2(0.0f, 0.0f);
+							rb2d.velocity = Vector2.zero;
                             Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
                             Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
                             Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
@@ -331,12 +348,12 @@ public class CharSquare : CharSquareBehaviour
             // If the closest relevant collision is a WinnersSquare we set hasWon to true which will be processed through the next update frame.
             if (!wallCollisions)
             {
-                rb2d.velocity = velocity;
+				rb2d.velocity = velocity;
             }
             else
             {
                 int countIndex = 0;
-                Vector2 useVector = new Vector2(0.0f, 0.0f);
+				Vector2 useVector = Vector2.zero;
                 RaycastHit2D useCollision = new RaycastHit2D();
                 bool firstVectorFound = false;
                 foreach (bool hasCollided in isWallCollision)
@@ -369,8 +386,10 @@ public class CharSquare : CharSquareBehaviour
         }
         else
         {
-            rb2d.velocity = velocity;
+			rb2d.velocity = velocity;
         }
+
+		networkObject.position = rb2d.position;
 
         // Shoot bullets if the player pressed the shoot button.
         if (shoot)
@@ -391,10 +410,17 @@ public class CharSquare : CharSquareBehaviour
             {
                 Vector2 bulletVelocity;
                 bulletVelocities.TryGetValue(bullets, out bulletVelocity);
-                Bullet newBullet = SpawnBullet(new Vector2(0.0f, 0.0f), bulletVelocity);
+                
+				Vector2 bulletDirection = bulletVelocity;
+				bulletDirection.Normalize();
+				var newBullet = NetworkManager.Instance.InstantiateBullet(0, transform.position, Quaternion.identity, true);
+				((Bullet)newBullet.GetComponent<Bullet>()).InitialiseBullet(bulletDirection, bulletSpeed, bulletDamage, playerId, Convert.ToInt32(bullets), bulletList.Count);
+				bulletList.Add((Bullet)newBullet.GetComponent<Bullet>());
+				/*
+				Bullet newBullet = SpawnBullet(new Vector2(0.0f, 0.0f), bulletVelocity);
                 newBullet.bulletDirection = bullets;
                 newBullet.bulletListPosition = bulletList.Count;
-                bulletList.Add(newBullet);
+                bulletList.Add(newBullet);*/
             }
         }
         shoot = false;
@@ -406,7 +432,9 @@ public class CharSquare : CharSquareBehaviour
     {
         direction.Normalize();
         GameObject newBullet = (GameObject)Instantiate(bullet, transform.position + new Vector3(position.x, position.y, 0.0f), Quaternion.identity);
-        ((Rigidbody2D)newBullet.GetComponent<Rigidbody2D>()).AddForce(direction * bulletSpeed);
+		((Bullet)newBullet.GetComponent<Bullet>()).direction = direction;
+		((Bullet)newBullet.GetComponent<Bullet> ()).speed = bulletSpeed;
+        //((Rigidbody2D)newBullet.GetComponent<Rigidbody2D>()).AddForce(direction * bulletSpeed);
         ((Bullet)newBullet.GetComponent<Bullet>()).player = this;
         ((Bullet)newBullet.GetComponent<Bullet>()).playerId = playerId;
         return (Bullet)newBullet.GetComponent<Bullet>();
@@ -475,8 +503,9 @@ public class CharSquare : CharSquareBehaviour
             int count = bulletList.Count - 1;
             while (bulletList.Count > 0)
             {
-                Destroy(bulletList[count].gameObject);
-                bulletList.RemoveAt(count);
+				Bullet destroyBullet = bulletList[count];
+				bulletList.RemoveAt(count);
+				destroyBullet.DestroyObject();
                 count--;
             }
         }
@@ -484,13 +513,13 @@ public class CharSquare : CharSquareBehaviour
         GameObject[] playerSpecialWalls = GameObject.FindGameObjectsWithTag("PlayerSpecialWall");
         foreach (GameObject playerWall in playerSpecialWalls)
         {
-            if (((SquarePlayerWall)playerWall.GetComponent<SquarePlayerWall>()).playerId == playerId)
+			if (((SquarePlayerWall)playerWall.GetComponent<SquarePlayerWall>()).playerId == playerId)
             {
-                DestroyObject(playerWall);
+				((SquarePlayerWall)playerWall.GetComponent<SquarePlayerWall>()).DestroySelfOnNetwork();
             }
         }
 
-        Destroy(gameObject);
+		networkObject.Destroy();
     }
 
     // If the player has won the level process as desired.

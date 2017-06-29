@@ -1,10 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
+using BeardedManStudios.Forge.Networking.Generated;
 
 // This object acts as a normal wall for all players, except the player that has the same playerId as it.
 // This player can move and shoot freely through the wall.
+using BeardedManStudios.Forge.Networking;
 
-public class SquarePlayerWall : MonoBehaviour
+public class SquarePlayerWall : SquarePlayerWallBehavior
 {
 
     private Color[] colors = { Color.white, Color.blue, Color.magenta, Color.red, Color.green };
@@ -32,4 +34,14 @@ public class SquarePlayerWall : MonoBehaviour
             }
         }
     }
+
+	public override void DestroySelf(RpcArgs args)
+	{
+		networkObject.Destroy();
+	}
+
+	public void DestroySelfOnNetwork()
+	{
+		networkObject.SendRpc(RPC_DESTROY_SELF, Receivers.Owner);
+	}
 }

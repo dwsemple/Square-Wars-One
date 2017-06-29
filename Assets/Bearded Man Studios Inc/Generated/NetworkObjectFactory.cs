@@ -4,9 +4,9 @@ using MainThreadManager = BeardedManStudios.Forge.Networking.Unity.MainThreadMan
 
 namespace BeardedManStudios.Forge.Networking.Generated
 {
-	public partial class NetworkObjectFactory : INetworkObjectFactory
+	public partial class NetworkObjectFactory : NetworkObjectFactoryBase
 	{
-		public void NetworkCreateObject(NetWorker networker, int identity, uint id, FrameStream frame, Action<NetworkObject> callback)
+		public override void NetworkCreateObject(NetWorker networker, int identity, uint id, FrameStream frame, Action<NetworkObject> callback)
 		{
 			if (networker.IsServer)
 			{
@@ -23,6 +23,14 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			{
 				switch (identity)
 				{
+					case BulletNetworkObject.IDENTITY:
+						availableCallback = true;
+						obj = new BulletNetworkObject(networker, id, frame);
+						break;
+					case CharSquareNetworkObject.IDENTITY:
+						availableCallback = true;
+						obj = new CharSquareNetworkObject(networker, id, frame);
+						break;
 					case ChatManagerNetworkObject.IDENTITY:
 						availableCallback = true;
 						obj = new ChatManagerNetworkObject(networker, id, frame);
@@ -39,20 +47,17 @@ namespace BeardedManStudios.Forge.Networking.Generated
 						availableCallback = true;
 						obj = new NetworkCameraNetworkObject(networker, id, frame);
 						break;
-					case CharSquareNetworkObject.IDENTITY:
+					case SquarePlayerWallNetworkObject.IDENTITY:
 						availableCallback = true;
-						obj = new CharSquareNetworkObject(networker, id, frame);
+						obj = new SquarePlayerWallNetworkObject(networker, id, frame);
 						break;
 				}
 
-				if (callback != null)
+				if (!availableCallback)
+					base.NetworkCreateObject(networker, identity, id, frame, callback);
+				else if (callback != null)
 					callback(obj);
 			});
-
-			if (!availableCallback && callback != null)
-			{
-				callback(obj);
-			}
 		}
 
 		// DO NOT TOUCH, THIS GETS GENERATED PLEASE EXTEND THIS CLASS IF YOU WISH TO HAVE CUSTOM CODE ADDITIONS

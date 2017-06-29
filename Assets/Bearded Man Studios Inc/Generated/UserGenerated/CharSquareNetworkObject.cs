@@ -5,17 +5,20 @@ using UnityEngine;
 
 namespace BeardedManStudios.Forge.Networking.Generated
 {
-	[GeneratedInterpol("{\"inter\":[0.15]")]
+	[GeneratedInterpol("{\"inter\":[0]")]
 	public partial class CharSquareNetworkObject : NetworkObject
 	{
-		public const int IDENTITY = 5;
+		public const int IDENTITY = 2;
 
 		private byte[] _dirtyFields = new byte[1];
 
-		private Vector3 _position;
-		public event FieldEvent<Vector3> positionChanged;
-		public InterpolateVector3 positionInterpolation = new InterpolateVector3() { LerpT = 0.15f, Enabled = false };
-		public Vector3 position
+		#pragma warning disable 0067
+		public event FieldChangedEvent fieldAltered;
+		#pragma warning restore 0067
+		private Vector2 _position;
+		public event FieldEvent<Vector2> positionChanged;
+		public InterpolateVector2 positionInterpolation = new InterpolateVector2() { LerpT = 0f, Enabled = false };
+		public Vector2 position
 		{
 			get { return _position; }
 			set
@@ -40,8 +43,8 @@ namespace BeardedManStudios.Forge.Networking.Generated
 		private void RunChange_position(ulong timestep)
 		{
 			if (positionChanged != null) positionChanged(_position, timestep);
+			if (fieldAltered != null) fieldAltered("position", _position, timestep);
 		}
-
 
 		protected override void OwnershipChanged()
 		{
@@ -50,8 +53,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 		
 		public void SnapInterpolations()
 		{
-			positionInterpolation.current = _position;
-			positionInterpolation.target = _position;
+			positionInterpolation.current = positionInterpolation.target;
 		}
 
 		public override int UniqueIdentity { get { return IDENTITY; } }
@@ -65,7 +67,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 
 		protected override void ReadPayload(BMSByte payload, ulong timestep)
 		{
-			_position = UnityObjectMapper.Instance.Map<Vector3>(payload);
+			_position = UnityObjectMapper.Instance.Map<Vector2>(payload);
 			positionInterpolation.current = _position;
 			positionInterpolation.target = _position;
 			RunChange_position(timestep);
@@ -94,12 +96,12 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			{
 				if (positionInterpolation.Enabled)
 				{
-					positionInterpolation.target = UnityObjectMapper.Instance.Map<Vector3>(data);
+					positionInterpolation.target = UnityObjectMapper.Instance.Map<Vector2>(data);
 					positionInterpolation.Timestep = timestep;
 				}
 				else
 				{
-					_position = UnityObjectMapper.Instance.Map<Vector3>(data);
+					_position = UnityObjectMapper.Instance.Map<Vector2>(data);
 					RunChange_position(timestep);
 				}
 			}
@@ -112,7 +114,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 
 			if (positionInterpolation.Enabled && !positionInterpolation.current.Near(positionInterpolation.target, 0.0015f))
 			{
-				_position = (Vector3)positionInterpolation.Interpolate();
+				_position = (Vector2)positionInterpolation.Interpolate();
 				RunChange_position(positionInterpolation.Timestep);
 			}
 		}
@@ -125,7 +127,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 		}
 
 		public CharSquareNetworkObject() : base() { Initialize(); }
-		public CharSquareNetworkObject(NetWorker networker, INetworkBehavior networkBehavior = null, int createCode = 0) : base(networker, networkBehavior, createCode) { Initialize(); }
+		public CharSquareNetworkObject(NetWorker networker, INetworkBehavior networkBehavior = null, int createCode = 0, byte[] metadata = null) : base(networker, networkBehavior, createCode, metadata) { Initialize(); }
 		public CharSquareNetworkObject(NetWorker networker, uint serverId, FrameStream frame) : base(networker, serverId, frame) { Initialize(); }
 
 		// DO NOT TOUCH, THIS GETS GENERATED PLEASE EXTEND THIS CLASS IF YOU WISH TO HAVE CUSTOM CODE ADDITIONS
