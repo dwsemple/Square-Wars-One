@@ -72,6 +72,40 @@ public class CharSquare : CharSquareBehavior
         DOWN
     }
 
+	public static int ConvertBulletDirectionToInt(BulletDirection bulletDirection)
+	{
+		switch (bulletDirection)
+		{
+		case BulletDirection.LEFT:
+			return 1;
+		case BulletDirection.RIGHT:
+			return 2;
+		case BulletDirection.UP:
+			return 3;
+		case BulletDirection.DOWN:
+			return 4;
+		default:
+			return 0;
+		}
+	}
+
+	public static BulletDirection ConvertIntToBulletDirection(int bulletDirection)
+	{
+		switch (bulletDirection)
+		{
+		case 1:
+			return BulletDirection.LEFT;
+		case 2:
+			return BulletDirection.RIGHT;
+		case 3:
+			return BulletDirection.UP;
+		case 4:
+			return BulletDirection.DOWN;
+		default:
+			return BulletDirection.LEFT;
+		}
+	}
+
     private class MoveAxisData
     {
         private String axisName;
@@ -148,7 +182,11 @@ public class CharSquare : CharSquareBehavior
     {
 
 		if(!networkObject.IsOwner)
-		{
+		{/*
+			if (rb2d.position != networkObject.position)
+			{
+				rb2d.position = networkObject.position;
+			}*/
 			return;
 		}
 
@@ -195,6 +233,201 @@ public class CharSquare : CharSquareBehavior
                 }
             }
         }
+		/*
+		if(!networkObject.IsOwner)
+		{
+			if (rb2d.position != networkObject.position)
+			{
+				rb2d.position = networkObject.position;
+			}
+			return;
+		}
+
+		// Determine the direction and speed of movement for the current interval.
+		float h = 0.0f;
+		float v = 0.0f;
+
+		MoveAxisData currentAxis;
+		movementAxisData.TryGetValue(movementQueue[0], out currentAxis);
+		if (currentAxis.AxisAffected == MoveAxis.HORIZONTAL)
+		{
+			h = Input.GetAxis(currentAxis.AxisName);
+		}
+		else if (currentAxis.AxisAffected == MoveAxis.VERTICAL)
+		{
+			v = Input.GetAxis(currentAxis.AxisName);
+		}
+
+		Vector2 direction = new Vector2(h, v);
+		direction.Normalize();
+		Vector2 velocity = direction * playerSpeed;
+
+		// Use raycasting to detect a collision if movement in this interval would cause a collision with a relevant object.
+		RaycastHit2D[] wallCollision = Physics2D.RaycastAll(new Vector2(transform.position.x, transform.position.y), direction, (Mathf.Abs(direction.x * 0.16f) + (Mathf.Abs(velocity.x) * Time.fixedDeltaTime)) + (Mathf.Abs(direction.y * 0.16f) + (Mathf.Abs(velocity.y) * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
+		RaycastHit2D[] wallCollisionUpper = Physics2D.RaycastAll(new Vector2(transform.position.x + (Mathf.Abs(direction.y) * 0.16f), transform.position.y + (Mathf.Abs(direction.x) * 0.16f)), direction, (Mathf.Abs(direction.x * 0.16f) + (Mathf.Abs(velocity.x) * Time.fixedDeltaTime)) + (Mathf.Abs(direction.y * 0.16f) + (Mathf.Abs(velocity.y) * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
+		RaycastHit2D[] wallCollisionLower = Physics2D.RaycastAll(new Vector2(transform.position.x - (Mathf.Abs(direction.y) * 0.16f), transform.position.y - (Mathf.Abs(direction.x) * 0.16f)), direction, (Mathf.Abs(direction.x * 0.16f) + (Mathf.Abs(velocity.x) * Time.fixedDeltaTime)) + (Mathf.Abs(direction.y * 0.16f) + (Mathf.Abs(velocity.y) * Time.fixedDeltaTime)), 1 << LayerMask.NameToLayer("Wall"));
+
+		// Determine if any collisions at all were detected.
+		RaycastHit2D[][] collisionsDetected = { wallCollision, wallCollisionUpper, wallCollisionLower };
+		bool collisionDetectedFromRayCast = false;
+		foreach (RaycastHit2D[] collisionDetected in collisionsDetected)
+		{
+			foreach (RaycastHit2D collision in collisionDetected)
+			{
+				if (collision)
+				{
+					collisionDetectedFromRayCast = true;
+					break;
+				}
+			}
+			if (collisionDetectedFromRayCast)
+			{
+				break;
+			}
+		}
+
+		// If the raycasts return a collision we need to process what we want to do.
+		// Otherwise we move as normal.
+		if (collisionDetectedFromRayCast)
+		{
+
+			// We will use these attributes to determine which raycasts detected a collision and the distances between them to determine which collision is closest.
+			RaycastHit2D[] collisionDetected = { new RaycastHit2D(), new RaycastHit2D(), new RaycastHit2D() };
+			bool[] isWallCollision = { false, false, false };
+			Vector2[] wallCollisionDistance = { new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f), new Vector2(0.0f, 0.0f) };
+
+			// Here we calculate which raycasts detected collisions and the distances between the player and the object for the wall layer.
+			/* Physics2D.RaycastAll returns an array of collisions in the order of closest first.
+               We use this to assume that the first object we find in the RaycastHit2D array that we care about colliding with is the closest object to the player in the array that we care about colliding with.
+               If this changes and Physics2D.RaycastAll returns an unsorted array this will need to be revisted to determine which object in the array is closest to the player.
+            
+			int count = 0;
+			foreach (RaycastHit2D[] collisions in collisionsDetected)
+			{
+				foreach (RaycastHit2D collision in collisions)
+				{
+					if (collision && !isWallCollision[count])
+					{
+						if (collision.rigidbody.CompareTag("Wall"))
+						{
+							rb2d.velocity = Vector2.zero;
+							Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
+							Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
+							Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+
+							wallCollisionDistance[count] = boundaryOffset - squareOffset;
+							isWallCollision[count] = true;
+							collisionDetected[count] = collision;
+						}
+						else if (collision.rigidbody.CompareTag("GameBoundary"))
+						{
+							rb2d.velocity = Vector2.zero;
+							Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
+							Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + (((1.0f * -direction.x) * wallTransform.localScale.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + (((1.0f * -direction.y) * wallTransform.localScale.y) / 2));
+							Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+
+							wallCollisionDistance[count] = boundaryOffset - squareOffset;
+							isWallCollision[count] = true;
+							collisionDetected[count] = collision;
+						}
+						else if (collision.rigidbody.CompareTag("PlayerSpecialWall"))
+						{
+							if (((SquarePlayerWall)collision.rigidbody.GetComponent<SquarePlayerWall>()).playerId != playerId)
+							{
+								rb2d.velocity = Vector2.zero;
+								Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
+								Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
+								Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+
+								wallCollisionDistance[count] = boundaryOffset - squareOffset;
+								isWallCollision[count] = true;
+								collisionDetected[count] = collision;
+							}
+						}
+						else if (collision.rigidbody.CompareTag("WinnersSquare"))
+						{
+							rb2d.velocity = Vector2.zero;
+							Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
+							Vector2 boundaryOffset = new Vector2((wallTransform.position.x * Mathf.Abs(direction.x)) + ((0.33f * -direction.x) / 2), (wallTransform.position.y * Mathf.Abs(direction.y)) + ((0.33f * -direction.y) / 2));
+							Vector2 squareOffset = new Vector2((transform.position.x * Mathf.Abs(direction.x)) + ((0.33f * direction.x) / 2), (transform.position.y * Mathf.Abs(direction.y)) + ((0.33f * direction.y) / 2));
+
+							wallCollisionDistance[count] = boundaryOffset - squareOffset;
+							isWallCollision[count] = true;
+							collisionDetected[count] = collision;
+						}
+					}
+					else
+					{
+						break;
+					}
+				}
+				count++;
+			}
+
+			// Check to see if we actually detected any collisions that we care about colliding with.
+			bool wallCollisions = false;
+			foreach (bool wallCollisionDetected in isWallCollision)
+			{
+				if (wallCollisionDetected)
+				{
+					wallCollisions = true;
+					break;
+				}
+			}
+
+			// If we didn't detect any relevant collisions the player will move as normal.
+			// If we detected a relevant collision we need to determine which raytrace (upper, middle, lower) found the closest collision and move the player the difference between themselves and the closest object they collided with to bring them flush against the object.
+			// If the closest relevant collision is a WinnersSquare we set hasWon to true which will be processed through the next update frame.
+			if (!wallCollisions)
+			{
+				rb2d.velocity = velocity;
+			}
+			else
+			{
+				int countIndex = 0;
+				Vector2 useVector = Vector2.zero;
+				RaycastHit2D useCollision = new RaycastHit2D();
+				bool firstVectorFound = false;
+				foreach (bool hasCollided in isWallCollision)
+				{
+					if (hasCollided)
+					{
+						if (!firstVectorFound)
+						{
+							useVector = wallCollisionDistance[countIndex];
+							useCollision = collisionDetected[countIndex];
+							firstVectorFound = true;
+						}
+						else
+						{
+							if (Mathf.Abs(wallCollisionDistance[countIndex].x + wallCollisionDistance[countIndex].y) < Mathf.Abs(useVector.x + useVector.y))
+							{
+								useVector = wallCollisionDistance[countIndex];
+								useCollision = collisionDetected[countIndex];
+							}
+						}
+					}
+					countIndex++;
+				}
+				rb2d.position += useVector;
+				if (useCollision.rigidbody.CompareTag("WinnersSquare"))
+				{
+					hasWon = true;
+				}
+			}
+		}
+		else
+		{
+			rb2d.velocity = velocity;
+		}
+
+		networkObject.position = rb2d.position;
+
+		// Shoot bullets if the player pressed the shoot button.
+		if (shoot)
+		{
+			Shoot();
+		}*/
     }
 
     // Run at a consistant interval.
@@ -414,7 +647,7 @@ public class CharSquare : CharSquareBehavior
 				Vector2 bulletDirection = bulletVelocity;
 				bulletDirection.Normalize();
 				var newBullet = NetworkManager.Instance.InstantiateBullet(0, transform.position, Quaternion.identity, true);
-				((Bullet)newBullet.GetComponent<Bullet>()).InitialiseBullet(bulletDirection, bulletSpeed, bulletDamage, playerId, Convert.ToInt32(bullets), bulletList.Count);
+				((Bullet)newBullet.GetComponent<Bullet>()).InitialiseBullet(bulletDirection, bulletSpeed, bulletDamage, playerId, ConvertBulletDirectionToInt(bullets), bulletList.Count);
 				bulletList.Add((Bullet)newBullet.GetComponent<Bullet>());
 				/*
 				Bullet newBullet = SpawnBullet(new Vector2(0.0f, 0.0f), bulletVelocity);

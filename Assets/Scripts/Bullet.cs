@@ -34,6 +34,25 @@ public class Bullet : BulletBehavior
 	public void InitialiseBullet(Vector2 new_direction, float new_speed, int new_damage, int new_playerId, int new_bulletDirection, int new_bulletListPosition)
 	{
 		networkObject.SendRpc(RPC_CONSTRUCT_BULLET, Receivers.AllBuffered, new_direction, new_speed, new_damage, new_playerId, new_bulletDirection, new_bulletListPosition);
+
+		direction = new_direction;
+		speed = new_speed;
+		damage = new_damage;
+		playerId = new_playerId;
+		bulletDirection = CharSquare.ConvertIntToBulletDirection(new_bulletDirection);
+		bulletListPosition = new_bulletListPosition;
+		rb2d.AddForce (direction * speed);
+		GetComponent<SpriteRenderer>().color = colors[playerId];
+
+		GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+		foreach (GameObject playerObject in players)
+		{
+			if (((CharSquare)playerObject.GetComponent<CharSquare>()).playerId == playerId)
+			{
+				player = ((CharSquare)playerObject.GetComponent<CharSquare>());
+				break;
+			}
+		}
 	}
 
 	public override void ConstructBullet(RpcArgs args)
@@ -42,7 +61,7 @@ public class Bullet : BulletBehavior
 		speed = args.GetNext<float>();
 		damage = args.GetNext<int>();
 		playerId = args.GetNext<int>();
-		bulletDirection = (CharSquare.BulletDirection)args.GetNext<int>();
+		bulletDirection = CharSquare.ConvertIntToBulletDirection(args.GetNext<int>());
 		bulletListPosition = args.GetNext<int>();
 		rb2d.AddForce (direction * speed);
 		GetComponent<SpriteRenderer>().color = colors[playerId];
