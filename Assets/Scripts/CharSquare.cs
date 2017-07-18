@@ -630,6 +630,17 @@ public class CharSquare : CharSquareBehavior
             Shoot();
         }
     }
+
+	public void SetPlayerId(int newPlayerId)
+	{
+		networkObject.SendRpc(RPC_UPDATE_PLAYER_ID, Receivers.AllBuffered, newPlayerId);
+	}
+
+	public override void UpdatePlayerId(RpcArgs args)
+	{
+		playerId = args.GetNext<int>();
+	}
+		
 	/*
     // The shoot function shoots a bullet in each direction.
     // It will only spawn a bullet in a particular direction if there are less than maxBullets in that direction.
@@ -687,7 +698,7 @@ public class CharSquare : CharSquareBehavior
 				bulletVelocities.TryGetValue(bullets, out bulletVelocity);
 				//Bullet newBullet = SpawnBullet(new Vector2(0.0f, 0.0f), bulletVelocity);
 				bulletVelocity.Normalize();
-				Bullet newBullet = CreateBullet(bulletVelocity, bulletSpeed, bulletDamage, playerId, ConvertBulletDirectionToInt(bullets), bulletList.Count);
+				Bullet newBullet = CreateBullet(bulletVelocity, bulletSpeed, bulletDamage, playerId, ConvertBulletDirectionToInt(bullets), bulletList.Count, transform.position);
 				//newBullet.bulletDirection = bullets;
 				//newBullet.bulletListPosition = bulletList.Count;
 				bulletList.Add(newBullet);
@@ -708,17 +719,17 @@ public class CharSquare : CharSquareBehavior
 		return (Bullet)newBullet.GetComponent<Bullet>();
 	}*/
 
-	private Bullet CreateBullet(Vector2 newDirection, float newSpeed, int newDamage, int newPlayerId, int newBulletDirection, int newBulletListPosition)
+	private Bullet CreateBullet(Vector2 newDirection, float newSpeed, int newDamage, int newPlayerId, int newBulletDirection, int newBulletListPosition, Vector2 newPosition)
 	{
-		networkObject.SendRpc(RPC_SPAWN_BULLET, Receivers.OthersBuffered, newDirection, newSpeed, newDamage, newPlayerId, newBulletDirection, newBulletListPosition);
-		Bullet newBullet = InstantiateBullet(newDirection, newSpeed, newDamage, newPlayerId, newBulletDirection, newBulletListPosition);
+		networkObject.SendRpc(RPC_SPAWN_BULLET, Receivers.OthersBuffered, newDirection, newSpeed, newDamage, newPlayerId, newBulletDirection, newBulletListPosition, newPosition);
+		Bullet newBullet = InstantiateBullet(newDirection, newSpeed, newDamage, newPlayerId, newBulletDirection, newBulletListPosition, newPosition);
 
 		return newBullet;
 	}
 
-	private Bullet InstantiateBullet(Vector2 newDirection, float newSpeed, int newDamage, int newPlayerId, int newBulletDirection, int newBulletListPosition)
+	private Bullet InstantiateBullet(Vector2 newDirection, float newSpeed, int newDamage, int newPlayerId, int newBulletDirection, int newBulletListPosition, Vector2 newPosition)
 	{
-		GameObject newBullet = (GameObject)Instantiate(bullet, transform.position, Quaternion.identity);
+		GameObject newBullet = (GameObject)Instantiate(bullet, newPosition, Quaternion.identity);
 		//Vector2 newDirection = args.GetNext<Vector2>();
 		//float newSpeed = args.GetNext<float>();
 		//int newDamage = args.GetNext<int>();
@@ -741,7 +752,8 @@ public class CharSquare : CharSquareBehavior
 		int newPlayerId = args.GetNext<int>();
 		int newBulletDirection = args.GetNext<int>();
 		int newBulletListPosition = args.GetNext<int>();
-		InstantiateBullet(newDirection, newSpeed, newDamage, newPlayerId, newBulletDirection, newBulletListPosition);
+		Vector2 newPosition = args.GetNext<Vector2>();
+		InstantiateBullet(newDirection, newSpeed, newDamage, newPlayerId, newBulletDirection, newBulletListPosition, newPosition);
 		/*
 		GameObject newBullet = (GameObject)Instantiate(bullet, transform.position, Quaternion.identity);
 		Vector2 newDirection = args.GetNext<Vector2>();

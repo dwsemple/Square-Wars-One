@@ -117,7 +117,7 @@ public class Bullet : MonoBehaviour
 				player.RemoveBullet(bulletDirection, bulletListPosition);
 			}
 			//networkObject.Destroy();
-			this.DestroySelf();
+			Destroy(gameObject);
 		}
     }
 
@@ -126,7 +126,7 @@ public class Bullet : MonoBehaviour
 		if (bulletState != -1) {
 			bulletState = -1;
 			//networkObject.Destroy();
-			this.DestroySelf();
+			Destroy(gameObject);
 		}
 	}
 }

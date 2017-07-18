@@ -4,14 +4,13 @@ using UnityEngine;
 
 namespace BeardedManStudios.Forge.Networking.Generated
 {
-	[GeneratedRPC("{\"types\":[[\"Vector2\", \"float\", \"int\", \"int\", \"int\", \"int\", \"Vector2\"][\"int\"]]")]
-	[GeneratedRPCVariableNames("{\"types\":[[\"direction\", \"speed\", \"damage\", \"playerid\", \"bulletdirection\", \"bulletposition\", \"position\"][\"playerid\"]]")]
-	public abstract partial class CharSquareBehavior : NetworkBehavior
+	[GeneratedRPC("{\"types\":[[\"byte\"]]")]
+	[GeneratedRPCVariableNames("{\"types\":[[\"\"]]")]
+	public abstract partial class GlobalSettingsBehavior : NetworkBehavior
 	{
-		public const byte RPC_SPAWN_BULLET = 0 + 5;
-		public const byte RPC_UPDATE_PLAYER_ID = 1 + 5;
+		public const byte RPC_UPDATE_PLAYER_NUMBERS = 0 + 5;
 		
-		public CharSquareNetworkObject networkObject = null;
+		public GlobalSettingsNetworkObject networkObject = null;
 
 		public override void Initialize(NetworkObject obj)
 		{
@@ -19,12 +18,11 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			if (networkObject != null && networkObject.AttachedBehavior != null)
 				return;
 			
-			networkObject = (CharSquareNetworkObject)obj;
+			networkObject = (GlobalSettingsNetworkObject)obj;
 			networkObject.AttachedBehavior = this;
 
 			base.SetupHelperRpcs(networkObject);
-			networkObject.RegisterRpc("SpawnBullet", SpawnBullet, typeof(Vector2), typeof(float), typeof(int), typeof(int), typeof(int), typeof(int), typeof(Vector2));
-			networkObject.RegisterRpc("UpdatePlayerId", UpdatePlayerId, typeof(int));
+			networkObject.RegisterRpc("UpdatePlayerNumbers", UpdatePlayerNumbers, typeof(byte));
 
 			MainThreadManager.Run(NetworkStart);
 
@@ -76,7 +74,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 
 		public override void Initialize(NetWorker networker, byte[] metadata = null)
 		{
-			Initialize(new CharSquareNetworkObject(networker, createCode: TempAttachCode, metadata: metadata));
+			Initialize(new GlobalSettingsNetworkObject(networker, createCode: TempAttachCode, metadata: metadata));
 		}
 
 		private void DestroyGameObject()
@@ -87,7 +85,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 
 		public override NetworkObject CreateNetworkObject(NetWorker networker, int createCode, byte[] metadata = null)
 		{
-			return new CharSquareNetworkObject(networker, this, createCode, metadata);
+			return new GlobalSettingsNetworkObject(networker, this, createCode, metadata);
 		}
 
 		protected override void InitializedTransform()
@@ -97,20 +95,9 @@ namespace BeardedManStudios.Forge.Networking.Generated
 
 		/// <summary>
 		/// Arguments:
-		/// Vector2 direction
-		/// float speed
-		/// int damage
-		/// int playerid
-		/// int bulletdirection
-		/// int bulletposition
-		/// Vector2 position
+		/// byte
 		/// </summary>
-		public abstract void SpawnBullet(RpcArgs args);
-		/// <summary>
-		/// Arguments:
-		/// int playerid
-		/// </summary>
-		public abstract void UpdatePlayerId(RpcArgs args);
+		public abstract void UpdatePlayerNumbers(RpcArgs args);
 
 		// DO NOT TOUCH, THIS GETS GENERATED PLEASE EXTEND THIS CLASS IF YOU WISH TO HAVE CUSTOM CODE ADDITIONS
 	}
