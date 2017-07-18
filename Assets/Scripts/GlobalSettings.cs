@@ -9,21 +9,21 @@ public class GlobalSettings : GlobalSettingsBehavior {
 
 	public List<SpawnLocation> spawnLocations;
 	public List<PlayerData> playerData;
-	public int numberOfPlayers;
+	public int numberOfPlayers = 0;
 
 	// Use this for initialization
 	void Start () {
-		spawnLocations = new List<SpawnLocation>();
-		playerData = new List<PlayerData>();
-		//SpawnLocation newSpawnLocation = new SpawnLocation (0, 0, 0);
-		//Object defaultSpawnLocation = (Object)newSpawnLocation;
-		//PlayerData newPlayerData = new PlayerData (0, 0, 0, 0, 0, 0);
-		//Object defaultPlayerData = (Object)newPlayerData;
+		/*spawnLocations = new List<Object>();
+		playerData = new List<Object>();
+		SpawnLocation newSpawnLocation = new SpawnLocation (0, 0, 0);
+		Object defaultSpawnLocation = (Object)newSpawnLocation;
+		PlayerData newPlayerData = new PlayerData (0, 0, 0, 0, 0, 0);
+		Object defaultPlayerData = (Object)newPlayerData;*/
 
 		//spawnLocations.Add (new SpawnLocation (0, 0, 0));
 
 		//playerData.Add (new PlayerData(0, 0, 0, 0, 0, 0));
-		numberOfPlayers = 0;
+		//numberOfPlayers = 0;
 	}
 	
 	// Update is called once per frame
@@ -39,39 +39,5 @@ public class GlobalSettings : GlobalSettingsBehavior {
 	public override void UpdatePlayerNumbers(RpcArgs args)
 	{
 		numberOfPlayers++;
-	}
-
-	public struct SpawnLocation
-	{
-		public int playerId;
-		public int x;
-		public int y;
-
-		public SpawnLocation(int newPlayerId, int newX, int newY)
-		{
-			playerId = newPlayerId;
-			x = newX;
-			y = newY;
-		}
-	}
-
-	public struct PlayerData
-	{
-		public int playerId;
-		public int playerSpeed;
-		public int bulletSpeed;
-		public int bulletDamage;
-		public int maxBullets;
-		public int health;
-
-		public PlayerData(int newPlayerId, int newPlayerSpeed, int newBulletSpeed, int newBulletDamage, int newMaxBullets, int newHealth)
-		{
-			playerId = newPlayerId;
-			playerSpeed = newPlayerSpeed;
-			bulletSpeed = newBulletSpeed;
-			bulletDamage = newBulletDamage;
-			maxBullets = newMaxBullets;
-			health = newHealth;
-		}
 	}
 }
