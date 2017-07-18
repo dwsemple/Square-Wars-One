@@ -630,7 +630,7 @@ public class CharSquare : CharSquareBehavior
             Shoot();
         }
     }
-
+	/*
     // The shoot function shoots a bullet in each direction.
     // It will only spawn a bullet in a particular direction if there are less than maxBullets in that direction.
     private void Shoot()
@@ -653,7 +653,7 @@ public class CharSquare : CharSquareBehavior
 				Bullet newBullet = SpawnBullet(new Vector2(0.0f, 0.0f), bulletVelocity);
                 newBullet.bulletDirection = bullets;
                 newBullet.bulletListPosition = bulletList.Count;
-                bulletList.Add(newBullet);*/
+                bulletList.Add(newBullet);*//*
             }
         }
         shoot = false;
@@ -671,7 +671,93 @@ public class CharSquare : CharSquareBehavior
         ((Bullet)newBullet.GetComponent<Bullet>()).player = this;
         ((Bullet)newBullet.GetComponent<Bullet>()).playerId = playerId;
         return (Bullet)newBullet.GetComponent<Bullet>();
-    }
+    }*/
+
+	// The shoot function shoots a bullet in each direction.
+	// It will only spawn a bullet in a particular direction if there are less than maxBullets in that direction.
+	private void Shoot()
+	{
+		foreach (BulletDirection bullets in activeBullets.Keys)
+		{
+			List<Bullet> bulletList;
+			activeBullets.TryGetValue(bullets, out bulletList);
+			if (bulletList.Count < maxBullets)
+			{
+				Vector2 bulletVelocity;
+				bulletVelocities.TryGetValue(bullets, out bulletVelocity);
+				//Bullet newBullet = SpawnBullet(new Vector2(0.0f, 0.0f), bulletVelocity);
+				bulletVelocity.Normalize();
+				Bullet newBullet = CreateBullet(bulletVelocity, bulletSpeed, bulletDamage, playerId, ConvertBulletDirectionToInt(bullets), bulletList.Count);
+				//newBullet.bulletDirection = bullets;
+				//newBullet.bulletListPosition = bulletList.Count;
+				bulletList.Add(newBullet);
+			}
+		}
+		shoot = false;
+	}
+
+	/*
+	// Function used by shoot to simply spawn a bullet moving in a particular direction.
+	// Doesn't add the bullet to the activeBullets dictionary or any other useful overhead.
+	private Bullet SpawnBullet(Vector2 position, Vector2 direction)
+	{
+		direction.Normalize();
+		GameObject newBullet = (GameObject)Instantiate(bullet, transform.position + new Vector3(position.x, position.y, 0.0f), Quaternion.identity);
+		((Bullet)newBullet.GetComponent<Bullet>()).player = this;
+		((Bullet)newBullet.GetComponent<Bullet>()).playerId = playerId;
+		return (Bullet)newBullet.GetComponent<Bullet>();
+	}*/
+
+	private Bullet CreateBullet(Vector2 newDirection, float newSpeed, int newDamage, int newPlayerId, int newBulletDirection, int newBulletListPosition)
+	{
+		networkObject.SendRpc(RPC_SPAWN_BULLET, Receivers.OthersBuffered, newDirection, newSpeed, newDamage, newPlayerId, newBulletDirection, newBulletListPosition);
+		Bullet newBullet = InstantiateBullet(newDirection, newSpeed, newDamage, newPlayerId, newBulletDirection, newBulletListPosition);
+
+		return newBullet;
+	}
+
+	private Bullet InstantiateBullet(Vector2 newDirection, float newSpeed, int newDamage, int newPlayerId, int newBulletDirection, int newBulletListPosition)
+	{
+		GameObject newBullet = (GameObject)Instantiate(bullet, transform.position, Quaternion.identity);
+		//Vector2 newDirection = args.GetNext<Vector2>();
+		//float newSpeed = args.GetNext<float>();
+		//int newDamage = args.GetNext<int>();
+		//int newPlayerId = args.GetNext<int>();
+		//int newBulletDirection = args.GetNext<int>();
+		//int newBulletListPosition = args.GetNext<int>();
+
+		((Bullet)newBullet.GetComponent<Bullet>()).InitialiseBullet(newDirection, newSpeed, newDamage, newPlayerId, newBulletDirection, newBulletListPosition);
+		//((Bullet)newBullet.GetComponent<Bullet>()).player = this;
+		//((Bullet)newBullet.GetComponent<Bullet>()).playerId = playerId;
+
+		return (Bullet)newBullet.GetComponent<Bullet>();
+	}
+
+	public override void SpawnBullet(RpcArgs args)
+	{
+		Vector2 newDirection = args.GetNext<Vector2>();
+		float newSpeed = args.GetNext<float>();
+		int newDamage = args.GetNext<int>();
+		int newPlayerId = args.GetNext<int>();
+		int newBulletDirection = args.GetNext<int>();
+		int newBulletListPosition = args.GetNext<int>();
+		InstantiateBullet(newDirection, newSpeed, newDamage, newPlayerId, newBulletDirection, newBulletListPosition);
+		/*
+		GameObject newBullet = (GameObject)Instantiate(bullet, transform.position, Quaternion.identity);
+		Vector2 newDirection = args.GetNext<Vector2>();
+		float newSpeed = args.GetNext<float>();
+		int newDamage = args.GetNext<int>();
+		int newPlayerId = args.GetNext<int>();
+		int newBulletDirection = args.GetNext<int>();
+		int newBulletListPosition = args.GetNext<int>();
+
+		((Bullet)newBullet.GetComponent<Bullet>()).InitialiseBullet(newDirection, newSpeed, newDamage, newPlayerId, newBulletDirection, newBulletListPosition);
+		//((Bullet)newBullet.GetComponent<Bullet>()).player = this;
+		//((Bullet)newBullet.GetComponent<Bullet>()).playerId = playerId;
+		//newBullet.bulletDirection = bullets;
+		//newBullet.bulletListPosition = bulletList.Count;
+		//bulletList.Add(newBullet);*/
+	}
 
     // Removes a single bullet from the activeBullets dictionary.
     // Used by the Bullet class to remove itself when it detects it's own collisions and needs to destroy itself.

@@ -23,10 +23,6 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			{
 				switch (identity)
 				{
-					case BulletNetworkObject.IDENTITY:
-						availableCallback = true;
-						obj = new BulletNetworkObject(networker, id, frame);
-						break;
 					case CharSquareNetworkObject.IDENTITY:
 						availableCallback = true;
 						obj = new CharSquareNetworkObject(networker, id, frame);

@@ -10,7 +10,6 @@ namespace BeardedManStudios.Forge.Networking.Unity
 		public event InstantiateEvent objectInitialized;
 		private BMSByte metadata = new BMSByte();
 
-		public GameObject[] BulletNetworkObject = null;
 		public GameObject[] CharSquareNetworkObject = null;
 		public GameObject[] ChatManagerNetworkObject = null;
 		public GameObject[] CubeForgeGameNetworkObject = null;
@@ -33,30 +32,7 @@ namespace BeardedManStudios.Forge.Networking.Unity
 			if (obj.CreateCode < 0)
 				return;
 				
-			if (obj is BulletNetworkObject)
-			{
-				MainThreadManager.Run(() =>
-				{
-					NetworkBehavior newObj = null;
-					if (!NetworkBehavior.skipAttachIds.TryGetValue(obj.NetworkId, out newObj))
-					{
-						if (BulletNetworkObject.Length > 0 && BulletNetworkObject[obj.CreateCode] != null)
-						{
-							var go = Instantiate(BulletNetworkObject[obj.CreateCode]);
-							newObj = go.GetComponent<NetworkBehavior>();
-						}
-					}
-
-					if (newObj == null)
-						return;
-						
-					newObj.Initialize(obj);
-
-					if (objectInitialized != null)
-						objectInitialized(newObj, obj);
-				});
-			}
-			else if (obj is CharSquareNetworkObject)
+			if (obj is CharSquareNetworkObject)
 			{
 				MainThreadManager.Run(() =>
 				{
@@ -204,18 +180,6 @@ namespace BeardedManStudios.Forge.Networking.Unity
 			obj.pendingInitialized -= InitializedObject;
 		}
 
-		[Obsolete("Use InstantiateBullet instead, its shorter and easier to type out ;)")]
-		public BulletBehavior InstantiateBulletNetworkObject(int index = 0, Vector3? position = null, Quaternion? rotation = null, bool sendTransform = true)
-		{
-			var go = Instantiate(BulletNetworkObject[index]);
-			var netBehavior = go.GetComponent<BulletBehavior>();
-			var obj = netBehavior.CreateNetworkObject(Networker, index);
-			go.GetComponent<BulletBehavior>().networkObject = (BulletNetworkObject)obj;
-
-			FinializeInitialization(go, netBehavior, obj, position, rotation, sendTransform);
-			
-			return netBehavior;
-		}
 		[Obsolete("Use InstantiateCharSquare instead, its shorter and easier to type out ;)")]
 		public CharSquareBehavior InstantiateCharSquareNetworkObject(int index = 0, Vector3? position = null, Quaternion? rotation = null, bool sendTransform = true)
 		{
@@ -289,48 +253,6 @@ namespace BeardedManStudios.Forge.Networking.Unity
 			return netBehavior;
 		}
 
-		public BulletBehavior InstantiateBullet(int index = 0, Vector3? position = null, Quaternion? rotation = null, bool sendTransform = true)
-		{
-			var go = Instantiate(BulletNetworkObject[index]);
-			var netBehavior = go.GetComponent<BulletBehavior>();
-
-			NetworkObject obj = null;
-			if (!sendTransform && position == null && rotation == null)
-				obj = netBehavior.CreateNetworkObject(Networker, index);
-			else
-			{
-				metadata.Clear();
-
-				if (position == null && rotation == null)
-				{
-					metadata.Clear();
-					byte transformFlags = 0x1 | 0x2;
-					ObjectMapper.Instance.MapBytes(metadata, transformFlags);
-					ObjectMapper.Instance.MapBytes(metadata, go.transform.position, go.transform.rotation);
-				}
-				else
-				{
-					byte transformFlags = 0x0;
-					transformFlags |= (byte)(position != null ? 0x1 : 0x0);
-					transformFlags |= (byte)(rotation != null ? 0x2 : 0x0);
-					ObjectMapper.Instance.MapBytes(metadata, transformFlags);
-
-					if (position != null)
-						ObjectMapper.Instance.MapBytes(metadata, position.Value);
-
-					if (rotation != null)
-						ObjectMapper.Instance.MapBytes(metadata, rotation.Value);
-				}
-
-				obj = netBehavior.CreateNetworkObject(Networker, index, metadata.CompressBytes());
-			}
-
-			go.GetComponent<BulletBehavior>().networkObject = (BulletNetworkObject)obj;
-
-			FinializeInitialization(go, netBehavior, obj, position, rotation, sendTransform);
-			
-			return netBehavior;
-		}
 		public CharSquareBehavior InstantiateCharSquare(int index = 0, Vector3? position = null, Quaternion? rotation = null, bool sendTransform = true)
 		{
 			var go = Instantiate(CharSquareNetworkObject[index]);

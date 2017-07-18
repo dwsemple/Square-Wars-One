@@ -2,10 +2,11 @@
 using System.Collections;
 using BeardedManStudios.Forge.Networking;
 using BeardedManStudios.Forge.Networking.Generated;
+using BeardedManStudios.Forge.Networking.Unity;
 
 // Bullet objects shot by players.
 
-public class Bullet : BulletBehavior
+public class Bullet : MonoBehaviour
 {
 
 	public Vector2 direction = Vector2.zero;
@@ -31,16 +32,16 @@ public class Bullet : BulletBehavior
         
     }
 
-	public void InitialiseBullet(Vector2 new_direction, float new_speed, int new_damage, int new_playerId, int new_bulletDirection, int new_bulletListPosition)
+	public void InitialiseBullet(Vector2 newDirection, float newSpeed, int newDamage, int newPlayerId, int newBulletDirection, int newBulletListPosition)
 	{
-		networkObject.SendRpc(RPC_CONSTRUCT_BULLET, Receivers.AllBuffered, new_direction, new_speed, new_damage, new_playerId, new_bulletDirection, new_bulletListPosition);
+		//networkObject.SendRpc(RPC_CONSTRUCT_BULLET, Receivers.AllBuffered, new_direction, new_speed, new_damage, new_playerId, new_bulletDirection, new_bulletListPosition);
 
-		direction = new_direction;
-		speed = new_speed;
-		damage = new_damage;
-		playerId = new_playerId;
-		bulletDirection = CharSquare.ConvertIntToBulletDirection(new_bulletDirection);
-		bulletListPosition = new_bulletListPosition;
+		direction = newDirection;
+		speed = newSpeed;
+		damage = newDamage;
+		playerId = newPlayerId;
+		bulletDirection = CharSquare.ConvertIntToBulletDirection(newBulletDirection);
+		bulletListPosition = newBulletListPosition;
 		rb2d.AddForce (direction * speed);
 		GetComponent<SpriteRenderer>().color = colors[playerId];
 
@@ -54,7 +55,7 @@ public class Bullet : BulletBehavior
 			}
 		}
 	}
-
+	/*
 	public override void ConstructBullet(RpcArgs args)
 	{
 		direction = args.GetNext<Vector2>();
@@ -75,15 +76,15 @@ public class Bullet : BulletBehavior
 				break;
 			}
 		}
-	}
+	}*/
 
     // Handle collisions using Unitys inbuild physics.
     void OnTriggerEnter2D(Collider2D other)
-    {
+    {/*
 		if(!networkObject.IsOwner)
 		{
 			return;
-		}
+		}*/
         if (other.gameObject.CompareTag("GameBoundary") || other.gameObject.CompareTag("Wall") || other.gameObject.CompareTag("WinnersSquare"))
         {
             DestroySelf();
@@ -109,18 +110,23 @@ public class Bullet : BulletBehavior
     // Handles removing itself from the player objects activeBullets dictionaries as well as destroying it's own GameObject.
     public void DestroySelf()
     {
-		if (bulletState != 1) {
-			bulletState = 1;
-			player.RemoveBullet(bulletDirection, bulletListPosition);
-			networkObject.Destroy();
+		if (bulletState != -1) {
+			bulletState = -1;
+			if(player.networkObject.IsOwner)
+			{
+				player.RemoveBullet(bulletDirection, bulletListPosition);
+			}
+			//networkObject.Destroy();
+			this.DestroySelf();
 		}
     }
 
 	public void DestroyObject()
 	{
-		if (bulletState != 1) {
-			bulletState = 1;
-			networkObject.Destroy();
+		if (bulletState != -1) {
+			bulletState = -1;
+			//networkObject.Destroy();
+			this.DestroySelf();
 		}
 	}
 }

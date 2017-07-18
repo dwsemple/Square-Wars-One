@@ -4,10 +4,11 @@ using UnityEngine;
 
 namespace BeardedManStudios.Forge.Networking.Generated
 {
-	[GeneratedRPC("{\"types\":[]")]
-	[GeneratedRPCVariableNames("{\"types\":[]")]
+	[GeneratedRPC("{\"types\":[[\"Vector2\", \"float\", \"int\", \"int\", \"int\", \"int\"]]")]
+	[GeneratedRPCVariableNames("{\"types\":[[\"direction\", \"speed\", \"damage\", \"playerid\", \"bulletdirection\", \"bulletposition\"]]")]
 	public abstract partial class CharSquareBehavior : NetworkBehavior
 	{
+		public const byte RPC_SPAWN_BULLET = 0 + 5;
 		
 		public CharSquareNetworkObject networkObject = null;
 
@@ -21,6 +22,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			networkObject.AttachedBehavior = this;
 
 			base.SetupHelperRpcs(networkObject);
+			networkObject.RegisterRpc("SpawnBullet", SpawnBullet, typeof(Vector2), typeof(float), typeof(int), typeof(int), typeof(int), typeof(int));
 
 			MainThreadManager.Run(NetworkStart);
 
@@ -91,6 +93,16 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			networkObject.SnapInterpolations();
 		}
 
+		/// <summary>
+		/// Arguments:
+		/// Vector2 direction
+		/// float speed
+		/// int damage
+		/// int playerid
+		/// int bulletdirection
+		/// int bulletposition
+		/// </summary>
+		public abstract void SpawnBullet(RpcArgs args);
 
 		// DO NOT TOUCH, THIS GETS GENERATED PLEASE EXTEND THIS CLASS IF YOU WISH TO HAVE CUSTOM CODE ADDITIONS
 	}
