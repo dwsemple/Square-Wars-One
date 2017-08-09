@@ -1,13 +1,38 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 using BeardedManStudios.Forge.Networking.Generated;
 using BeardedManStudios.Forge.Networking;
 using BeardedManStudios.Forge.Networking.Unity;
 
 public class GlobalSettings : GlobalSettingsBehavior {
 
-	public List<SpawnLocation> spawnLocations;
+	[System.Serializable]
+	public class SpawnLocation
+	{
+
+		public int playerId;
+		public int x;
+		public int y;
+
+		public SpawnLocation()
+		{
+			playerId = 0;
+			x = 0;
+			y = 0;
+		}
+
+		public SpawnLocation(int newPlayerId, int newX, int newY)
+		{
+			playerId = newPlayerId;
+			x = newX;
+			y = newY;
+		}
+	}
+
+	public List<SpawnLocation> spawnLocations = new List<SpawnLocation>(1);
+	//public SpawnLocationList spawnLocations;
 	public List<PlayerData> playerData;
 	public int numberOfPlayers = 0;
 
@@ -24,6 +49,9 @@ public class GlobalSettings : GlobalSettingsBehavior {
 
 		//playerData.Add (new PlayerData(0, 0, 0, 0, 0, 0));
 		//numberOfPlayers = 0;
+
+
+		//var newPlayer = NetworkManager.Instance.InstantiateCharSquare();
 	}
 	
 	// Update is called once per frame
