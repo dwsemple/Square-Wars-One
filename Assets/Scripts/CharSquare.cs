@@ -12,7 +12,7 @@ public class CharSquare : CharSquareBehavior
 
     public GameObject bullet;
     public int playerId = 0;
-    public float playerSpeed = 300.0f;
+    public float playerSpeed = 5.0f;
     public float bulletSpeed = 500.0f;
 	public int bulletDamage = 1;
     public int maxBullets = 3;
@@ -167,6 +167,11 @@ public class CharSquare : CharSquareBehavior
         {
             movementQueue.Add(direction);
         }
+
+		if(networkObject.IsOwner)
+		{
+			MoveToSpawn();
+		}
     }
 
     void Awake()
@@ -630,6 +635,34 @@ public class CharSquare : CharSquareBehavior
             Shoot();
         }
     }
+
+	public void MoveToSpawn()
+	{
+		GlobalSettings globalSettings = (GlobalSettings)FindObjectOfType(typeof(GlobalSettings));
+		float x;
+		float y;
+		List<GlobalSettings.SpawnLocation> viableSpawns = new List<GlobalSettings.SpawnLocation>();
+		foreach(GlobalSettings.SpawnLocation spawnLocation in globalSettings.spawnLocations)
+		{
+			if(spawnLocation.playerId == playerId)
+			{
+				viableSpawns.Add(spawnLocation);
+			}
+		}
+
+		if(viableSpawns.Count > 0)
+		{
+			int spawnSelection = UnityEngine.Random.Range(0, viableSpawns.Count - 1);
+			x = viableSpawns[spawnSelection].x;
+			y = viableSpawns[spawnSelection].y;
+		}
+		else
+		{
+			x = 0.0f;
+			y = 0.0f;
+		}
+		rb2d.position = new Vector3(x, y, 0.0f);
+	}
 
 	public void SetPlayerId(int newPlayerId)
 	{
