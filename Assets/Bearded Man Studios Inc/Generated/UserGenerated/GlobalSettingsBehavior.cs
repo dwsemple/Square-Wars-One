@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace BeardedManStudios.Forge.Networking.Generated
 {
-	[GeneratedRPC("{\"types\":[[\"byte\"]]")]
-	[GeneratedRPCVariableNames("{\"types\":[[\"\"]]")]
+	[GeneratedRPC("{\"types\":[[]]")]
+	[GeneratedRPCVariableNames("{\"types\":[[]]")]
 	public abstract partial class GlobalSettingsBehavior : NetworkBehavior
 	{
 		public const byte RPC_UPDATE_PLAYER_NUMBERS = 0 + 5;
@@ -22,7 +22,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			networkObject.AttachedBehavior = this;
 
 			base.SetupHelperRpcs(networkObject);
-			networkObject.RegisterRpc("UpdatePlayerNumbers", UpdatePlayerNumbers, typeof(byte));
+			networkObject.RegisterRpc("UpdatePlayerNumbers", UpdatePlayerNumbers);
 
 			MainThreadManager.Run(NetworkStart);
 
@@ -95,7 +95,6 @@ namespace BeardedManStudios.Forge.Networking.Generated
 
 		/// <summary>
 		/// Arguments:
-		/// byte
 		/// </summary>
 		public abstract void UpdatePlayerNumbers(RpcArgs args);
 

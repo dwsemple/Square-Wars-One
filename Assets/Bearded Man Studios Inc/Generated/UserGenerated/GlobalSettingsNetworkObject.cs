@@ -15,35 +15,35 @@ namespace BeardedManStudios.Forge.Networking.Generated
 		#pragma warning disable 0067
 		public event FieldChangedEvent fieldAltered;
 		#pragma warning restore 0067
-		private int _numberofplayers;
-		public event FieldEvent<int> numberofplayersChanged;
-		public InterpolateUnknown numberofplayersInterpolation = new InterpolateUnknown() { LerpT = 0f, Enabled = false };
-		public int numberofplayers
+		private int _numberOfPlayers;
+		public event FieldEvent<int> numberOfPlayersChanged;
+		public InterpolateUnknown numberOfPlayersInterpolation = new InterpolateUnknown() { LerpT = 0f, Enabled = false };
+		public int numberOfPlayers
 		{
-			get { return _numberofplayers; }
+			get { return _numberOfPlayers; }
 			set
 			{
 				// Don't do anything if the value is the same
-				if (_numberofplayers == value)
+				if (_numberOfPlayers == value)
 					return;
 
 				// Mark the field as dirty for the network to transmit
 				_dirtyFields[0] |= 0x1;
-				_numberofplayers = value;
+				_numberOfPlayers = value;
 				hasDirtyFields = true;
 			}
 		}
 
-		public void SetnumberofplayersDirty()
+		public void SetnumberOfPlayersDirty()
 		{
 			_dirtyFields[0] |= 0x1;
 			hasDirtyFields = true;
 		}
 
-		private void RunChange_numberofplayers(ulong timestep)
+		private void RunChange_numberOfPlayers(ulong timestep)
 		{
-			if (numberofplayersChanged != null) numberofplayersChanged(_numberofplayers, timestep);
-			if (fieldAltered != null) fieldAltered("numberofplayers", _numberofplayers, timestep);
+			if (numberOfPlayersChanged != null) numberOfPlayersChanged(_numberOfPlayers, timestep);
+			if (fieldAltered != null) fieldAltered("numberOfPlayers", _numberOfPlayers, timestep);
 		}
 
 		protected override void OwnershipChanged()
@@ -53,24 +53,24 @@ namespace BeardedManStudios.Forge.Networking.Generated
 		
 		public void SnapInterpolations()
 		{
-			numberofplayersInterpolation.current = numberofplayersInterpolation.target;
+			numberOfPlayersInterpolation.current = numberOfPlayersInterpolation.target;
 		}
 
 		public override int UniqueIdentity { get { return IDENTITY; } }
 
 		protected override BMSByte WritePayload(BMSByte data)
 		{
-			UnityObjectMapper.Instance.MapBytes(data, _numberofplayers);
+			UnityObjectMapper.Instance.MapBytes(data, _numberOfPlayers);
 
 			return data;
 		}
 
 		protected override void ReadPayload(BMSByte payload, ulong timestep)
 		{
-			_numberofplayers = UnityObjectMapper.Instance.Map<int>(payload);
-			numberofplayersInterpolation.current = _numberofplayers;
-			numberofplayersInterpolation.target = _numberofplayers;
-			RunChange_numberofplayers(timestep);
+			_numberOfPlayers = UnityObjectMapper.Instance.Map<int>(payload);
+			numberOfPlayersInterpolation.current = _numberOfPlayers;
+			numberOfPlayersInterpolation.target = _numberOfPlayers;
+			RunChange_numberOfPlayers(timestep);
 		}
 
 		protected override BMSByte SerializeDirtyFields()
@@ -79,7 +79,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			dirtyFieldsData.Append(_dirtyFields);
 
 			if ((0x1 & _dirtyFields[0]) != 0)
-				UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _numberofplayers);
+				UnityObjectMapper.Instance.MapBytes(dirtyFieldsData, _numberOfPlayers);
 
 			return dirtyFieldsData;
 		}
@@ -94,15 +94,15 @@ namespace BeardedManStudios.Forge.Networking.Generated
 
 			if ((0x1 & readDirtyFlags[0]) != 0)
 			{
-				if (numberofplayersInterpolation.Enabled)
+				if (numberOfPlayersInterpolation.Enabled)
 				{
-					numberofplayersInterpolation.target = UnityObjectMapper.Instance.Map<int>(data);
-					numberofplayersInterpolation.Timestep = timestep;
+					numberOfPlayersInterpolation.target = UnityObjectMapper.Instance.Map<int>(data);
+					numberOfPlayersInterpolation.Timestep = timestep;
 				}
 				else
 				{
-					_numberofplayers = UnityObjectMapper.Instance.Map<int>(data);
-					RunChange_numberofplayers(timestep);
+					_numberOfPlayers = UnityObjectMapper.Instance.Map<int>(data);
+					RunChange_numberOfPlayers(timestep);
 				}
 			}
 		}
@@ -112,10 +112,10 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			if (IsOwner)
 				return;
 
-			if (numberofplayersInterpolation.Enabled && !numberofplayersInterpolation.current.Near(numberofplayersInterpolation.target, 0.0015f))
+			if (numberOfPlayersInterpolation.Enabled && !numberOfPlayersInterpolation.current.Near(numberOfPlayersInterpolation.target, 0.0015f))
 			{
-				_numberofplayers = (int)numberofplayersInterpolation.Interpolate();
-				RunChange_numberofplayers(numberofplayersInterpolation.Timestep);
+				_numberOfPlayers = (int)numberOfPlayersInterpolation.Interpolate();
+				RunChange_numberOfPlayers(numberOfPlayersInterpolation.Timestep);
 			}
 		}
 

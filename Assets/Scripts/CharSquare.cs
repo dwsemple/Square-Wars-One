@@ -140,6 +140,7 @@ public class CharSquare : CharSquareBehavior
 
     void Start()
     {
+		/*
         GetComponent<SpriteRenderer>().color = colors[playerId];
         if (playerId == 1)
         {
@@ -167,11 +168,11 @@ public class CharSquare : CharSquareBehavior
         {
             movementQueue.Add(direction);
         }
-
+		
 		if(networkObject.IsOwner)
 		{
 			MoveToSpawn();
-		}
+		}*/
     }
 
     void Awake()
@@ -186,14 +187,25 @@ public class CharSquare : CharSquareBehavior
     void Update()
     {
 
-		if(!networkObject.IsOwner)
-		{/*
+		if (!networkObject.IsOwner) {/*
 			if (rb2d.position != networkObject.position)
 			{
 				rb2d.position = networkObject.position;
 			}*/
+			if (playerId != networkObject.playerId) {
+				playerId = networkObject.playerId;
+			}
+			if (GetComponent<SpriteRenderer>().color != colors[playerId])
+			{
+				GetComponent<SpriteRenderer>().color = colors[playerId];
+			}
 			return;
 		}
+		else
+		{
+			networkObject.playerId = playerId;
+		}
+			
 
         // Process the case that the player has won the level.
         if (hasWon)
@@ -628,7 +640,7 @@ public class CharSquare : CharSquareBehavior
         }
 
 		networkObject.position = rb2d.position;
-
+		Debug.Log("I am player " + playerId + " and my position is x=" + rb2d.position.x + " y=" + rb2d.position.y);
         // Shoot bullets if the player pressed the shoot button.
         if (shoot)
         {
@@ -636,37 +648,92 @@ public class CharSquare : CharSquareBehavior
         }
     }
 
+	public void InitialiseCharSquareRPC()
+	{
+		if (networkObject.IsOwner)
+		{
+			InitialiseCharSquareLogic(playerId);
+			networkObject.SendRpc(RPC_INITIALISE_CHAR_SQUARE, Receivers.OthersBuffered, playerId);
+		}
+	}
+
+	public void InitialiseCharSquareLogic(int argsPlayerId)
+	{
+		GetComponent<SpriteRenderer>().color = colors[argsPlayerId];
+		if(networkObject.IsOwner)
+		{
+			if (argsPlayerId == 1)
+			{
+				movementAxisData = new Dictionary<MoveDirection, MoveAxisData>()
+				{
+					{ MoveDirection.NO_MOVE, new MoveAxisData(null, MoveAxis.NO_MOVE, null)  },
+					{ MoveDirection.LEFT, new MoveAxisData("Left", MoveAxis.HORIZONTAL, "Left") },
+					{ MoveDirection.RIGHT, new MoveAxisData("Right", MoveAxis.HORIZONTAL, "Right") },
+					{ MoveDirection.UP, new MoveAxisData("Up", MoveAxis.VERTICAL, "Up") },
+					{ MoveDirection.DOWN, new MoveAxisData("Down", MoveAxis.VERTICAL, "Down") }
+				};
+			}
+			else if (argsPlayerId == 2)
+			{
+				movementAxisData = new Dictionary<MoveDirection, MoveAxisData>()
+				{
+					{ MoveDirection.NO_MOVE, new MoveAxisData(null, MoveAxis.NO_MOVE, null)  },
+					{ MoveDirection.LEFT, new MoveAxisData("Left2", MoveAxis.HORIZONTAL, "Left2") },
+					{ MoveDirection.RIGHT, new MoveAxisData("Right2", MoveAxis.HORIZONTAL, "Right2") },
+					{ MoveDirection.UP, new MoveAxisData("Up2", MoveAxis.VERTICAL, "Up2") },
+					{ MoveDirection.DOWN, new MoveAxisData("Down2", MoveAxis.VERTICAL, "Down2") }
+				};
+			}
+			foreach (MoveDirection direction in Enum.GetValues(typeof(MoveDirection)))
+			{
+				movementQueue.Add(direction);
+			}
+
+			MoveToSpawn();
+		}
+	}
+
+	public override void InitialiseCharSquare(RpcArgs args)
+	{
+		int argsPlayerId = args.GetNext<int>();
+		Debug.Log("LoggedByMe: I'm the client and I am going to run this buffered RPC I received to initialse the server players square. His player id is " + argsPlayerId);
+		InitialiseCharSquareLogic(argsPlayerId);
+	}
+
 	public void MoveToSpawn()
 	{
-		GlobalSettings globalSettings = (GlobalSettings)FindObjectOfType(typeof(GlobalSettings));
-		float x;
-		float y;
-		List<GlobalSettings.SpawnLocation> viableSpawns = new List<GlobalSettings.SpawnLocation>();
-		foreach(GlobalSettings.SpawnLocation spawnLocation in globalSettings.spawnLocations)
-		{
-			if(spawnLocation.playerId == playerId)
-			{
-				viableSpawns.Add(spawnLocation);
+		if (networkObject.IsOwner) {
+			GlobalSettings globalSettings = (GlobalSettings)FindObjectOfType (typeof(GlobalSettings));
+			float x;
+			float y;
+			List<GlobalSettings.SpawnLocation> viableSpawns = new List<GlobalSettings.SpawnLocation> ();
+			foreach (GlobalSettings.SpawnLocation spawnLocation in globalSettings.spawnLocations) {
+				if (spawnLocation.playerId == playerId) {
+					viableSpawns.Add (spawnLocation);
+				}
 			}
+			Debug.Log ("LoggedByMe: I am player " + playerId + " and I have the following viable spawns:");
+			if (viableSpawns.Count > 0) {
+				foreach(GlobalSettings.SpawnLocation spawn in viableSpawns)
+				{
+					Debug.Log ("LoggedByMe: PlayerId=" + spawn.playerId + " x=" + spawn.x + " y=" + spawn.y);
+				}
+				int spawnSelection = UnityEngine.Random.Range (0, viableSpawns.Count - 1);
+				x = viableSpawns [spawnSelection].x;
+				y = viableSpawns [spawnSelection].y;
+			} else {
+				Debug.Log ("LoggedByMe: No viable spawns");
+				x = 0.0f;
+				y = 0.0f;
+			}
+			rb2d.position = new Vector3 (x, y, 0.0f);
 		}
-
-		if(viableSpawns.Count > 0)
-		{
-			int spawnSelection = UnityEngine.Random.Range(0, viableSpawns.Count - 1);
-			x = viableSpawns[spawnSelection].x;
-			y = viableSpawns[spawnSelection].y;
-		}
-		else
-		{
-			x = 0.0f;
-			y = 0.0f;
-		}
-		rb2d.position = new Vector3(x, y, 0.0f);
 	}
 
 	public void SetPlayerId(int newPlayerId)
 	{
-		networkObject.SendRpc(RPC_UPDATE_PLAYER_ID, Receivers.AllBuffered, newPlayerId);
+		playerId = newPlayerId;
+		networkObject.SendRpc(RPC_UPDATE_PLAYER_ID, Receivers.OthersBuffered, newPlayerId);
 	}
 
 	public override void UpdatePlayerId(RpcArgs args)
