@@ -11,7 +11,8 @@ public class CharSquare : CharSquareBehavior
 {
 
     public GameObject bullet;
-    public int playerId = 0;
+    public int localPlayerId = 0;
+	public int networkPlayerId = 0;
     public float playerSpeed = 5.0f;
     public float bulletSpeed = 500.0f;
 	public int bulletDamage = 1;
@@ -192,18 +193,22 @@ public class CharSquare : CharSquareBehavior
 			{
 				rb2d.position = networkObject.position;
 			}*/
-			if (playerId != networkObject.playerId) {
-				playerId = networkObject.playerId;
+			if (networkPlayerId != networkObject.networkPlayerId) {
+				networkPlayerId = networkObject.networkPlayerId;
 			}
-			if (GetComponent<SpriteRenderer>().color != colors[playerId])
+			if (localPlayerId != networkObject.localPlayerId) {
+				localPlayerId = networkObject.localPlayerId;
+			}
+			if (GetComponent<SpriteRenderer>().color != colors[networkPlayerId])
 			{
-				GetComponent<SpriteRenderer>().color = colors[playerId];
+				GetComponent<SpriteRenderer>().color = colors[networkPlayerId];
 			}
 			return;
 		}
 		else
 		{
-			networkObject.playerId = playerId;
+			networkObject.networkPlayerId = networkPlayerId;
+			networkObject.localPlayerId = localPlayerId;
 		}
 			
 
@@ -240,11 +245,11 @@ public class CharSquare : CharSquareBehavior
                     }
                 }
 
-                if (Input.GetButtonDown("Fire") && (playerId == 1))
+                if (Input.GetButtonDown("Fire") && (localPlayerId == 1))
                 {
                     shoot = true;
                 }
-                else if (Input.GetButtonDown("Fire2") && (playerId == 2))
+                else if (Input.GetButtonDown("Fire2") && (localPlayerId == 2))
                 {
                     shoot = true;
                 }
@@ -550,7 +555,7 @@ public class CharSquare : CharSquareBehavior
                         }
                         else if (collision.rigidbody.CompareTag("PlayerSpecialWall"))
                         {
-                            if (((SquarePlayerWall)collision.rigidbody.GetComponent<SquarePlayerWall>()).playerId != playerId)
+                            if (((SquarePlayerWall)collision.rigidbody.GetComponent<SquarePlayerWall>()).playerId != networkPlayerId)
                             {
 								rb2d.velocity = Vector2.zero;
                                 Transform wallTransform = collision.rigidbody.GetComponent<Transform>();
@@ -640,7 +645,7 @@ public class CharSquare : CharSquareBehavior
         }
 
 		networkObject.position = rb2d.position;
-		Debug.Log("I am player " + playerId + " and my position is x=" + rb2d.position.x + " y=" + rb2d.position.y);
+		Debug.Log("I am player " + networkPlayerId + " and my position is x=" + rb2d.position.x + " y=" + rb2d.position.y);
         // Shoot bullets if the player pressed the shoot button.
         if (shoot)
         {
@@ -652,17 +657,17 @@ public class CharSquare : CharSquareBehavior
 	{
 		if (networkObject.IsOwner)
 		{
-			InitialiseCharSquareLogic(playerId);
-			networkObject.SendRpc(RPC_INITIALISE_CHAR_SQUARE, Receivers.OthersBuffered, playerId);
+			InitialiseCharSquareLogic(networkPlayerId, localPlayerId);
+			networkObject.SendRpc(RPC_INITIALISE_CHAR_SQUARE, Receivers.OthersBuffered, networkPlayerId, localPlayerId);
 		}
 	}
 
-	public void InitialiseCharSquareLogic(int argsPlayerId)
+	public void InitialiseCharSquareLogic(int argsNetworkPlayerId, int argsLocalPlayerId)
 	{
-		GetComponent<SpriteRenderer>().color = colors[argsPlayerId];
+		GetComponent<SpriteRenderer>().color = colors[argsNetworkPlayerId];
 		if(networkObject.IsOwner)
 		{
-			if (argsPlayerId == 1)
+			if (argsLocalPlayerId == 1)
 			{
 				movementAxisData = new Dictionary<MoveDirection, MoveAxisData>()
 				{
@@ -673,7 +678,7 @@ public class CharSquare : CharSquareBehavior
 					{ MoveDirection.DOWN, new MoveAxisData("Down", MoveAxis.VERTICAL, "Down") }
 				};
 			}
-			else if (argsPlayerId == 2)
+			else if (argsLocalPlayerId == 2)
 			{
 				movementAxisData = new Dictionary<MoveDirection, MoveAxisData>()
 				{
@@ -695,24 +700,25 @@ public class CharSquare : CharSquareBehavior
 
 	public override void InitialiseCharSquare(RpcArgs args)
 	{
-		int argsPlayerId = args.GetNext<int>();
-		Debug.Log("LoggedByMe: I'm the client and I am going to run this buffered RPC I received to initialse the server players square. His player id is " + argsPlayerId);
-		InitialiseCharSquareLogic(argsPlayerId);
+		int argsNetworkPlayerId = args.GetNext<int>();
+		int argsLocalPlayerId = args.GetNext<int>();
+		Debug.Log("LoggedByMe: I'm the client and I am going to run this buffered RPC I received to initialse the server players square. His player id is " + argsNetworkPlayerId);
+		InitialiseCharSquareLogic(argsNetworkPlayerId, argsLocalPlayerId);
 	}
 
 	public void MoveToSpawn()
 	{
 		if (networkObject.IsOwner) {
-			GlobalSettings globalSettings = (GlobalSettings)FindObjectOfType (typeof(GlobalSettings));
+			GlobalSettings globalSettings = (GlobalSettings)FindObjectOfType(typeof(GlobalSettings));
 			float x;
 			float y;
 			List<GlobalSettings.SpawnLocation> viableSpawns = new List<GlobalSettings.SpawnLocation> ();
 			foreach (GlobalSettings.SpawnLocation spawnLocation in globalSettings.spawnLocations) {
-				if (spawnLocation.playerId == playerId) {
+				if (spawnLocation.playerId == networkPlayerId) {
 					viableSpawns.Add (spawnLocation);
 				}
 			}
-			Debug.Log ("LoggedByMe: I am player " + playerId + " and I have the following viable spawns:");
+			Debug.Log ("LoggedByMe: I am player " + networkPlayerId + " and I have the following viable spawns:");
 			if (viableSpawns.Count > 0) {
 				foreach(GlobalSettings.SpawnLocation spawn in viableSpawns)
 				{
@@ -732,13 +738,13 @@ public class CharSquare : CharSquareBehavior
 
 	public void SetPlayerId(int newPlayerId)
 	{
-		playerId = newPlayerId;
+		networkPlayerId = newPlayerId;
 		networkObject.SendRpc(RPC_UPDATE_PLAYER_ID, Receivers.OthersBuffered, newPlayerId);
 	}
 
 	public override void UpdatePlayerId(RpcArgs args)
 	{
-		playerId = args.GetNext<int>();
+		networkPlayerId = args.GetNext<int>();
 	}
 		
 	/*
@@ -798,7 +804,7 @@ public class CharSquare : CharSquareBehavior
 				bulletVelocities.TryGetValue(bullets, out bulletVelocity);
 				//Bullet newBullet = SpawnBullet(new Vector2(0.0f, 0.0f), bulletVelocity);
 				bulletVelocity.Normalize();
-				Bullet newBullet = CreateBullet(bulletVelocity, bulletSpeed, bulletDamage, playerId, ConvertBulletDirectionToInt(bullets), bulletList.Count, transform.position);
+				Bullet newBullet = CreateBullet(bulletVelocity, bulletSpeed, bulletDamage, networkPlayerId, ConvertBulletDirectionToInt(bullets), bulletList.Count, transform.position);
 				//newBullet.bulletDirection = bullets;
 				//newBullet.bulletListPosition = bulletList.Count;
 				bulletList.Add(newBullet);
@@ -944,7 +950,7 @@ public class CharSquare : CharSquareBehavior
         GameObject[] playerSpecialWalls = GameObject.FindGameObjectsWithTag("PlayerSpecialWall");
         foreach (GameObject playerWall in playerSpecialWalls)
         {
-			if (((SquarePlayerWall)playerWall.GetComponent<SquarePlayerWall>()).playerId == playerId)
+			if (((SquarePlayerWall)playerWall.GetComponent<SquarePlayerWall>()).playerId == networkPlayerId)
             {
 				((SquarePlayerWall)playerWall.GetComponent<SquarePlayerWall>()).DestroySelfOnNetwork();
             }

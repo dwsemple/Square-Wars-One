@@ -48,7 +48,7 @@ public class Bullet : MonoBehaviour
 		GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
 		foreach (GameObject playerObject in players)
 		{
-			if (((CharSquare)playerObject.GetComponent<CharSquare>()).playerId == playerId)
+			if (((CharSquare)playerObject.GetComponent<CharSquare>()).networkPlayerId == playerId)
 			{
 				player = ((CharSquare)playerObject.GetComponent<CharSquare>());
 				break;
@@ -91,7 +91,7 @@ public class Bullet : MonoBehaviour
         }
         else if(other.gameObject.CompareTag("Player"))
         {
-			if (((CharSquare)other.GetComponent<CharSquare>()).playerId != playerId && playerId != 0)
+			if (((CharSquare)other.GetComponent<CharSquare>()).networkPlayerId != playerId && playerId != 0)
             {
                 ((CharSquare)other.GetComponent<CharSquare>()).health -= damage;
                 DestroySelf();

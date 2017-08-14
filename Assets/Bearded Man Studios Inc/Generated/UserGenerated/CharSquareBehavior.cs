@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace BeardedManStudios.Forge.Networking.Generated
 {
-	[GeneratedRPC("{\"types\":[[\"Vector2\", \"float\", \"int\", \"int\", \"int\", \"int\", \"Vector2\"][\"int\"][\"int\"]]")]
-	[GeneratedRPCVariableNames("{\"types\":[[\"direction\", \"speed\", \"damage\", \"playerid\", \"bulletdirection\", \"bulletposition\", \"position\"][\"playerid\"][\"playerId\"]]")]
+	[GeneratedRPC("{\"types\":[[\"Vector2\", \"float\", \"int\", \"int\", \"int\", \"int\", \"Vector2\"][\"int\"][\"int\", \"int\"]]")]
+	[GeneratedRPCVariableNames("{\"types\":[[\"direction\", \"speed\", \"damage\", \"playerid\", \"bulletdirection\", \"bulletposition\", \"position\"][\"playerid\"][\"networkPlayerId\", \"localPlayerId\"]]")]
 	public abstract partial class CharSquareBehavior : NetworkBehavior
 	{
 		public const byte RPC_SPAWN_BULLET = 0 + 5;
@@ -26,7 +26,7 @@ namespace BeardedManStudios.Forge.Networking.Generated
 			base.SetupHelperRpcs(networkObject);
 			networkObject.RegisterRpc("SpawnBullet", SpawnBullet, typeof(Vector2), typeof(float), typeof(int), typeof(int), typeof(int), typeof(int), typeof(Vector2));
 			networkObject.RegisterRpc("UpdatePlayerId", UpdatePlayerId, typeof(int));
-			networkObject.RegisterRpc("InitialiseCharSquare", InitialiseCharSquare, typeof(int));
+			networkObject.RegisterRpc("InitialiseCharSquare", InitialiseCharSquare, typeof(int), typeof(int));
 
 			MainThreadManager.Run(NetworkStart);
 
@@ -115,7 +115,8 @@ namespace BeardedManStudios.Forge.Networking.Generated
 		public abstract void UpdatePlayerId(RpcArgs args);
 		/// <summary>
 		/// Arguments:
-		/// int playerId
+		/// int networkPlayerId
+		/// int localPlayerId
 		/// </summary>
 		public abstract void InitialiseCharSquare(RpcArgs args);
 
