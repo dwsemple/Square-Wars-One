@@ -1,5 +1,5 @@
 # Square-Wars-One
-Proof of concept using Unity
+This is a proof of concept using Unity.
 
 
 Square Wars is a 2D, top down, multiplayer shooter.
